@@ -10,6 +10,7 @@ from utils.io_utils import load_json, dump_pickle, dump_json
 from index.tokenization import BasicTokenizer
 from string import punctuation
 from array import array
+from tqdm import tqdm
 
 
 class WikiParser():
@@ -53,7 +54,6 @@ class WikiParser():
             seek_pos = f.tell()
             c_page = f.readline()
             while c_page:
-                self.page_count += 1
                 c_page = json.loads(c_page)
                 yield c_page, seek_pos
 
@@ -70,7 +70,7 @@ class WikiParser():
         # don't use defaultdict, it can not be pickled
         word_index = dict()   # here i use word.t to represent word in title, fist list of tuple is doc id list, sencond list of tuple is frequency list
 
-        for c_page, seek_pos in self._readlines():
+        for c_page, seek_pos in tqdm(self._readlines(), total=6047512):
             word_counter = defaultdict(lambda:0)
             self.page_positions[self.page_count] = seek_pos
 
@@ -86,7 +86,7 @@ class WikiParser():
                     word_index[tmp][0].append(self.page_count)    # add doc id
                     word_index[tmp][1].append(word_counter[word])   # add word freq
                 else:
-                    word_index[tmp] = (array("L", [self.page_count - 1]), array("L", [word_counter[word]]))
+                    word_index[tmp] = (array("L", [self.page_count]), array("L", [word_counter[word]]))
                     # word_index[tmp] = ([self.page_count], [word_counter[word]])
 
             # make index for text
@@ -106,7 +106,7 @@ class WikiParser():
                     word_index[word][0].append(self.page_count)
                     word_index[word][1].append(word_counter[word])
                 else:
-                    word_index[word] = (array("L", [self.page_count - 1]), array("L", [word_counter[word]]))
+                    word_index[word] = (array("L", [self.page_count]), array("L", [word_counter[word]]))
                     # word_index[word] = ([self.page_count], [word_counter[word]])
             
             # whether use multi files to store index
@@ -115,7 +115,7 @@ class WikiParser():
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
 
             self.page_count += 1
-            if self.debug and self.page_count > 1000:
+            if self.debug and self.page_count > 10000:
                 break
 
         # yield word_index
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     ## Required parameters
     parser.add_argument("--input_dir", "-i", default="data/processed/wiki_00", type=str, help="The input data dir. Should contain the .xml file")
     parser.add_argument("--output_dir", "-o", default="data/index_test", type=str, help="The output data folder. Save index")
-    parser.add_argument("--debug", "-d", action='store_true', help="use 1000 pages to debug")
+    parser.add_argument("--debug", "-d", action='store_true', help="use 10,000 pages to debug")
     args = parser.parse_args()
 
     # make dir
