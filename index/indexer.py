@@ -14,7 +14,7 @@ from array import array
 
 class WikiParser():
     # a class to parser wiki dataset
-    def __init__(self, wiki_path, output_dir):
+    def __init__(self, wiki_path, output_dir, debug=False):
         self.name = "WikiParser"
         self.wiki_path = wiki_path
         self.STOP_WORDS_PATH = os.path.join("index", "stop_words.json")
@@ -27,6 +27,8 @@ class WikiParser():
         self.page_count = 0 # denote which number of wiki page it is
         self.page_positions = dict()    # store position of each page in source file
         self.page_positions_path = output_dir + "/page_positions.pickle"
+
+        self.debug = debug
 
 
     def _preprocess_sen(self, sen):
@@ -113,8 +115,8 @@ class WikiParser():
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
 
             self.page_count += 1
-            # if self.page_count > 1000:
-            #     break
+            if self.debug and self.page_count > 1000:
+                break
 
         # yield word_index
         return word_index
@@ -193,6 +195,7 @@ if __name__ == "__main__":
     ## Required parameters
     parser.add_argument("--input_dir", "-i", default="data/processed/wiki_00", type=str, help="The input data dir. Should contain the .xml file")
     parser.add_argument("--output_dir", "-o", default="data/index_test", type=str, help="The output data folder. Save index")
+    parser.add_argument("--debug", "-d", action='store_true', help="use 1000 pages to debug")
     args = parser.parse_args()
 
     # make dir
@@ -201,7 +204,7 @@ if __name__ == "__main__":
 
     start = time.time() # time start
 
-    wiki_parser = WikiParser(args.input_dir, args.output_dir)
+    wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
     index_maker = IndexMaker(wiki_parser, args.output_dir)
     index_maker.make_index()
 
