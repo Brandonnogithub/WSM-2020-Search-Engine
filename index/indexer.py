@@ -1,404 +1,214 @@
-import operator
 import os
 import time
-import xml.etree.cElementTree as et
 import re
 import pickle
 import nltk
 import argparse
-from math import log10
-from heapq import heapify, heappop, heappush
+import json
 from collections import defaultdict
-from utils.io_utils import load_json
+from utils.io_utils import load_json, dump_pickle, dump_json
+from index.tokenization import BasicTokenizer
+from string import punctuation
+from array import array
 
 
 class WikiParser():
     # a class to parser wiki dataset
-    def __init__(self, wiki_path):
+    def __init__(self, wiki_path, output_dir):
+        self.name = "WikiParser"
         self.wiki_path = wiki_path
         self.STOP_WORDS_PATH = os.path.join("index", "stop_words.json")
         self.stemmer = nltk.stem.SnowballStemmer('english')  # You can use porter or other stemmer
-        self.stem_word_dict = dict()
+        self.stem_word_dict = defaultdict(lambda:False)
         self.stop_words = load_json(self.STOP_WORDS_PATH)["stop_words"]
+        self.tokenizer = BasicTokenizer(never_split=[])
+        self.punctuation = re.compile(r"[{}]+".format(punctuation))
 
-        self.file_count = 0 # denote which number of wiki page it is
+        self.page_count = 0 # denote which number of wiki page it is
+        self.page_positions = dict()    # store position of each page in source file
+        self.page_positions_path = output_dir + "/page_positions.pickle"
 
 
-    def _preprocee_word(self, word):
-        # return stemmed word and update stem word dict
-        word = word.strip()
-        word = word.lower() # convert into lower case
-        if word not in self.stem_word_dict :
-            stem_word = self.stemmer.stem(word) # do stemming
-            self.stem_word_dict[word]=stem_word
-        else :
+    def _preprocess_sen(self, sen):
+        sen = sen.strip()   # remove "\n"
+        sen = re.sub(self.punctuation, " ", sen).lower()    # remove punctuation
+        sen_list = sen.split()      # tokenize
+
+        # stemming
+        res = []
+        for word in sen_list:
             stem_word = self.stem_word_dict[word]
-        return stem_word
+            if not stem_word:
+                stem_word = self.stemmer.stem(word) # do stemming
+                self.stem_word_dict[word]=stem_word
+            res.append(stem_word)
+        return res
+
+    
+    def _readlines(self):
+        # read wiki data page by page
+        with open(self.wiki_path, "r", encoding="utf8") as f:
+            seek_pos = f.tell()
+            c_page = f.readline()
+            while c_page:
+                self.page_count += 1
+                c_page = json.loads(c_page)
+                yield c_page, seek_pos
+
+                seek_pos = f.tell()
+                c_page = f.readline()
 
 
-    def iter_pages(self, pages_per_file):
+    def iter_pages(self, pages_per_file=0):
         
         # return a generator, next() to get next page info
         ''' 
-        pages_per_file: #pages to store in each file 
+        pages_per_file: #pages to store in each file (in case the index is larger than memory). default is 0 means all in a single file
         '''
-        # Defaut list of title,text,infobox,output_index.........inverted index
-        title_index = defaultdict(list)
-        text_index = defaultdict(list)
-        category_index = defaultdict(list)
-        infobox_index = defaultdict(list)
+        # don't use defaultdict, it can not be pickled
+        word_index = dict()   # here i use word.t to represent word in title, fist list of tuple is doc id list, sencond list of tuple is frequency list
 
-        for event, elem in self.context:
-            tag =  re.sub(r"{.*}", "", elem.tag)
+        for c_page, seek_pos in self._readlines():
+            word_counter = defaultdict(lambda:0)
+            self.page_positions[self.page_count] = seek_pos
 
-            # page tag start, initial all dicts and update counter
-            if event == "start" :
-                if tag == "page" :
-                    title_tag_words =  dict()
-                    infobox_words =  dict()
-                    text_tag_words =  dict()
-                    category_words =  dict()
-                    self.page_count = self.page_count + 1
+            # make index for title
+            title = c_page["title"]
+            title_list = self._preprocess_sen(title)
+            for word in title_list:
+                if word not in self.stop_words:
+                    word_counter[word] += 1
+            for word in word_counter:
+                tmp = word + ".t"
+                if tmp in word_index:
+                    word_index[tmp][0].append(self.page_count)    # add doc id
+                    word_index[tmp][1].append(word_counter[word])   # add word freq
+                else:
+                    word_index[tmp] = (array("L", [self.page_count - 1]), array("L", [word_counter[word]]))
+                    # word_index[tmp] = ([self.page_count], [word_counter[word]])
 
-            # tag end
-            if event == "end" :
-                # text tag
-                if tag == "text" :
-                    text = str(elem.text)
-                    text = self.regExp1.sub('',text)
-                    text = self.regExp2.sub('',text)
-                    text = self.regExp3.sub('',text)
-                    text = self.regExp4.sub('',text)
-                    try :
-                        tempword = re.findall(self.categoty_re, text); # get all data between [[Category : ----- ]]
-                        if tempword :
-                            for temp in tempword :
-                                temp = re.split(self.pattern, temp);#print(pattern)
-                                for t in temp :
-                                    t = self._preprocee_word(t)
-                                    if t :
-                                        if len(t) <= 2 :
-                                            continue
-                                        if  t not in self.stop_words :
-                                            if t not in category_words:
-                                                category_words[t] = 1
-                                            else : 
-                                                category_words[t] += 1
+            # make index for text
+            text = c_page["text"]
+            word_counter = defaultdict(lambda:0)
+            text_list = text.split("\n")
+            for item in text_list:
+                if item:
+                    if item.startswith("Section:"):
+                        item = item[11:]
+                    item_list = self._preprocess_sen(item)
+                    for word in item_list:
+                        if word not in self.stop_words:
+                            word_counter[word] += 1
+            for word in word_counter:
+                if word in word_index:
+                    word_index[word][0].append(self.page_count)
+                    word_index[word][1].append(word_counter[word])
+                else:
+                    word_index[word] = (array("L", [self.page_count - 1]), array("L", [word_counter[word]]))
+                    # word_index[word] = ([self.page_count], [word_counter[word]])
+            
+            # whether use multi files to store index
+            # if pages_per_file > 0 and self.page_count >= pages_per_file:
+            #     yield word_index
+            #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
 
-                        tempword = re.findall(self.infobox_re, text) # get all data between infobox{{ ----- }}
-                        if tempword :
-                            for temp in tempword :
-                                for word in temp : 
-                                    temp = re.split(pattern, word);#print(pattern)
-                                    for t in temp :
-                                        t = self._preprocee_word(t)
-                                        if t :
-                                            if len(t) <= 2 :
-                                                continue
-                                            if  t not in stop_words :
-                                                if t not in infobox_words :
-                                                    infobox_words[t] = 1
-                                                else :
-                                                    infobox_words[t] += 1
-                    except :
-                        pass
+            self.page_count += 1
+            # if self.page_count > 1000:
+            #     break
 
-                    try :
-                        text = text.lower()
-                        text = re.split(pattern, text)
+        # yield word_index
+        return word_index
 
-                        for word in text :
-                            if word :
-                                if word not in self.stem_word_dict :
-                                    stem_word = self.stemmer.stem(word) # do stemming
-                                    self.stem_word_dict[word]=stem_word
-                                else :
-                                    stem_word = self.stem_word_dict[word]
-                                word = stem_word
-                                if word not in self.stop_words :
-                                    if len(word) <= 2 :
-                                            continue
-                                    if word not in text_tag_words :
-                                        text_tag_words[word] = 1
-                                    else :
-                                        text_tag_words[word] += 1
 
-                    except :
-                        pass     
-                if tag == "title" :
-                    text = elem.text
-                    try :
-                        title_string = text
-                        title_position.append(title_tags.tell())
-                        
-                        text = text.lower()
-                        title_tags.write( title_string+"\n")
-                        text = re.split(self.pattern, text)
-
-                        for word in text :
-                            if word :
-                                if word not in self.stem_word_dict :
-                                    stem_word = self.stemmer.stem(word) # do stemming
-                                    self.stem_word_dict[word]=stem_word
-                                else :
-                                    stem_word = self.stem_word_dict[word]
-                                word = stem_word
-                                if word not in stop_words :
-                                    if len(word) <= 2 :
-                                        continue
-                                    if word not in title_tag_words :
-                                        title_tag_words[word] = 1
-                                    else :
-                                        title_tag_words[word] += 1
-
-                    except :
-                        pass
-
-                # Posting list start
-                if tag == "page" :
-
-                    doc_id = str(self.page_count) # get document ID ==> Wiki page number
-                    
-                    for word in text_tag_words :
-                        s = doc_id + ":" 
-                        s = s + str(text_tag_words[word]); # doc_id  : frequency
-                        text_index[word].append(s)
-
-                    for word in infobox_words :
-                        s = doc_id + ":" 
-                        s = s + str(infobox_words[word])
-                        infobox_index[word].append(s)
-                    
-                    for word in title_tag_words :
-                        s = doc_id + ":" 
-                        s = s + str(title_tag_words[word])
-                        title_index[word].append(s)
-
-                    for word in category_words :
-                        s = doc_id + ":"
-                        s = s + str(category_words[word])
-                        category_index[word].append(s)
-                    
-                    if self.page_count % 50000 == 0 :
-                        self.stem_word_dict = {}
-                        
-                    if self.page_count % pages_per_file == 0 :
-                        yield title_index, text_index, category_index, infobox_index
-                    
-                        title_index.clear()
-                        text_index.clear()
-                        category_index.clear()
-                        infobox_index.clear()
-
-                elem.clear()
-
-        yield title_index, text_index, category_index, infobox_index
+    def save_page_position(self):
+        dump_pickle(self.page_positions, self.page_positions_path)
 
 
 class IndexMaker():
     # A class to make index
-    def __init__(self, data_parser, index_path):
+    def __init__(self, data_parser, output_path, pages_per_file=0):
         self.data_parser = data_parser
-        self.index_path = index_path
-        self.title_tags_path = index_path + "/title_tags.txt"
-        self.t_file = index_path + "/title_positions.pickle"
-        self.word_positions_path = index_path + "/word_positions.pickle"
+        self.output_path = output_path
+        self.index_path = output_path + "/index.pickle"
+        
+        self.page_count = 0     # wiki pages
 
-        self.pages_per_file = 40000
-        self.file_count = 0
-        self.page_count = 0
+        self.vocab_path = output_path + "/vocab.json"   # use pickle if store file position
+        self.vocab = defaultdict(lambda:0)  # this vocab just stores frequency of words, if the index is too large and needs to store in disk, use (frequency, file_postition)
 
-        self.title_dst = "t"
-        self.text_dst = "b"
-        self.category_dst = "c"
-        self.infobox_dst = "i"
-        self.field_chars = ["t", "b", "i", "c"]
+        # index on disk
+        self.word_positions_path = output_path + "/word_positions.pickle"
+        self.pages_per_file = pages_per_file
+        self.file_count = 0     # index files
 
 
-    def _write_file(self, index_data, dst):
+    def _write_file(self, index_data):
         '''
         index_data: data to write
         dst: distinguish used in the file name
         '''
-        file = self.index_path + "/" + dst + str(self.file_count) + ".txt"
-        outfile = open(file, "w+")
-        for word in sorted(index_data) :
-            posting_list = ",".join(index_data[word])
-            index = word + "-" + posting_list
-            outfile.write(index+"\n")
-        outfile.close()
+        file = self.output_path + "/" + str(self.file_count) + ".txt"
+        pass    # change index to text and save
+
+    def _merge_index(self):
+        pass
 
 
-    def _get_source(self):
-        title_tags = open(self.title_tags_path, "w+")
-        title_position = list()
+    def _update_vocab(self, index):
+        for word in index:
+            word = word.split(".")[0]
+            (_, fl) = index[word]
+            for fre in fl:
+                self.vocab[word] += fre
 
-        for title_index, text_index, category_index, infobox_index in self.data_parser.iter_pages(title_position, title_tags, self.pages_per_file):
-            # print(title_index)
-            # print(text_index)
-            # print(category_index)
-            # print(infobox_index)
-            # raise Exception()
-            self._write_file(title_index, self.title_dst)
-            self._write_file(text_index, self.text_dst)
-            self._write_file(category_index, self.category_dst)
-            self._write_file(infobox_index, self.infobox_dst)
 
+    def make_index_large(self):
+        for one_index in self.data_parser.iter_pages(self.pages_per_file):
+            self._update_vocab(one_index)
+            self._write_file(one_index)
             self.file_count += 1
 
-        file = open(self.t_file, "wb+")
-        pickle.dump(title_position, file)
-        file.close()
-
+        self.data_parser.save_page_position()
         self.page_count = self.data_parser.page_count
 
-
-    def _make_index(self):
-        output_files = list()
-        word_position = dict() # store word & its occurence/file pointer in title file, infobox file, body file
-        # abc word : { { t : fpt1_val}, { b : fpt2_val}, { c : fpt3_val}, { b : fpt4_val} }
-
-        for f in self.field_chars :
-            heap = []
-            flag1 = 1
-            input_files = []
-            file = self.index_path + "/" + f + ".txt"
-            fp = open(file, "w+")
-            output_files.append(fp)
-            outfile_index = len(output_files) - 1
-
-            for i in range(self.file_count) :
-                file =  self.index_path + "/" + f + str(i) + ".txt"
-                if os.stat(file).st_size == 0 :
-                    try :
-                        del input_files[i]
-                        os.remove(file)
-                    except :
-                        pass
-                else :
-                    fp = open(file, "r")
-                    input_files.append(fp)
-
-            if len(input_files) == 0 :
-                flag1 = 0
-                break
-
-            for i in range(self.file_count) :
-                try :
-                    s = input_files[i].readline()[:-1]
-                    heap.append((s, i))
-                except :
-                    flag1 = 0
-                
-            i = 0
-            heapify(heap)
-
-            try :
-                while i < self.file_count :
-                    s, index = heappop(heap)
-                    word = s[: s.find("-")]
-                    posting_list = s[s.find("-") + 1 :]
-
-                    next_line = input_files[index].readline()[: -1]
-                    if next_line :
-                        heappush(heap, (next_line, index))
-                    else :
-                        i = i + 1 # one files ends here
-
-                    if i == self.file_count :
-                        flag1 = 0
-                        break
-
-                    while i < self.file_count :
-                        next_s, next_index = heappop(heap)
-                        next_word = next_s[: next_s.find("-")]
-                        next_posting_list = next_s[next_s.find("-") + 1 :]
-                        if next_word == word :
-                            posting_list = posting_list + "," + next_posting_list
-                            next_new_line = input_files[next_index].readline()
-                            if next_new_line :
-                                heappush(heap, (next_new_line, next_index))
-                            else : # one files ends here
-                                i = i + 1
-                        else :
-                            heappush(heap, (next_s, next_index))
-                            break
-
-                    if word not in word_position :
-                        word_position[word] = dict()
-                    word_position[word][f] = output_files[outfile_index].tell()
-                    postings = posting_list.split(",")
-                    documents = dict()
-                    idf = log10(self.page_count / len(postings))
-                    for posting in postings :
-                        doc_id = posting[ : posting.find(":")]
-                        freq = int( posting[posting.find(":") + 1 :] )
-                        tf = 1 + log10(freq)
-                        documents[str(doc_id)] = round(tf*idf, 2)
-
-                    documents = sorted(documents.items(), key = operator.itemgetter(1), reverse = True)
-                    
-                    top_posting_list_result = ""
-        #             number_of_results = 1
-                    for document in documents :
-                        top_posting_list_result = top_posting_list_result + document[0] + ":" + str(document[1]) + ","
-        #                 number_of_results = number_of_results + 1
-        #                 if number_of_results > 10 :
-        #                     break
-
-                    top_posting_list_result = top_posting_list_result[ : -1 ] # to remove last extra comma ","
-                    output_files[outfile_index].write( top_posting_list_result+"\n" )
-
-            except IndexError :
-                pass
-
-            output_files[outfile_index].close()
-
-            try :
-                for i in range(self.file_count) :
-                    file = self.index_path + "/" + f + str(i) + ".txt"
-                    input_files[i].close()
-                    os.remove(file)
-            except :
-                pass
-
-        file = open(self.word_positions_path, "wb+")
-        pickle.dump(word_position, file)
-        file.close()
-
-        print(word_position)
+        dump_json(self.vocab, self.vocab_path)
+        self._merge_index()
 
 
-    def build(self):
-        self._get_source()
-        self._make_index()
+    def make_index(self):
+        one_index = self.data_parser.iter_pages(self.pages_per_file)
+        self._update_vocab(one_index)
+        dump_pickle(one_index, self.index_path)
+        # dump_json(one_index, self.index_path)
+
+        self.data_parser.save_page_position()
+        self.page_count = self.data_parser.page_count
+
+        dump_json(self.vocab, self.vocab_path, indent=4)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--input_dir", "-i", default="data/processed/wiki_o1", type=str, help="The input data dir. Should contain the .xml file")
-    parser.add_argument("--output_dir", "-o", default="data/index", type=str, help="The output data folder. Save index")
+    parser.add_argument("--input_dir", "-i", default="data/processed/wiki_00", type=str, help="The input data dir. Should contain the .xml file")
+    parser.add_argument("--output_dir", "-o", default="data/index_test", type=str, help="The output data folder. Save index")
     args = parser.parse_args()
+
+    # make dir
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     start = time.time() # time start
 
-    wiki_parser = WikiParser(args.input_dir)
+    wiki_parser = WikiParser(args.input_dir, args.output_dir)
     index_maker = IndexMaker(wiki_parser, args.output_dir)
-    index_maker.build()
+    index_maker.make_index()
+
+    # save index info
+    index_maker.data_parser = index_maker.data_parser.name
+    index_maker.vocab = {}
+    dump_json(index_maker.__dict__, "data/index.json")
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")
-
-
-
-
-""" all intermediate t_1, t_2 file storing 
-    
-    word1 - doc_id1 : freq, doc_id2 : freq
-    word2 - doc_id2 : freq, doc_id3 : freq
-    
-    all these words are in sorted order.
-    for each word --> doc_id already in soreted order.. as we travsering document in an increasing doc_id only.
-"""
