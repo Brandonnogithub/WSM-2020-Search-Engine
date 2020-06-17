@@ -1,5 +1,5 @@
 class RankerBase():
-    # bool retrieval
+    # keep all
     def __init__(self):
         pass
 

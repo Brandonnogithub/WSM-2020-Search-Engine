@@ -15,12 +15,18 @@ from tqdm import tqdm
 
 class WikiParser():
     # a class to parser wiki dataset
-    def __init__(self, wiki_path="", output_dir="", debug=False):
+    def __init__(self, data_path="", output_dir="", debug=False):
         self.name = "WikiParser"
-        self.wiki_path = wiki_path
+        self.data_path = data_path
         self.STOP_WORDS_PATH = os.path.join("index", "stop_words.json")
+        self.stemmer_path = output_dir + "/stem.json"
         self.stemmer = nltk.stem.SnowballStemmer('english')  # You can use porter or other stemmer
-        self.stem_word_dict = defaultdict(lambda:False)
+        
+        if os.path.exists(self.stemmer_path):
+            self.stem_word_dict = load_json(self.stemmer_path)
+            self.stem_word_dict = defaultdict(lambda:False, self.stem_word_dict)
+        else:
+            self.stem_word_dict = defaultdict(lambda:False)
         self.stop_words = set(load_json(self.STOP_WORDS_PATH)["stop_words"])
         self.tokenizer = BasicTokenizer(never_split=[])
         self.punctuation = re.compile(r"[{}]+".format(punctuation))
@@ -52,7 +58,7 @@ class WikiParser():
     
     def _readlines(self):
         # read wiki data page by page
-        with open(self.wiki_path, "r", encoding="utf8") as f:
+        with open(self.data_path, "r", encoding="utf8") as f:
             seek_pos = f.tell()
             c_page = f.readline()
             while c_page:
@@ -122,8 +128,18 @@ class WikiParser():
         return word_index
 
 
-    def save_page_position(self):
+    def save_dicts(self):
         dump_pickle(self.page_positions, self.page_positions_path)
+        dump_json(self.stem_word_dict, self.stemmer_path, indent=4)
+
+
+    def get_cfg(self):
+        cfg = {}
+        for k, v in self.__dict__.items():
+            if type(v) == type("string") or type(v) == type(1):
+                cfg[k] = v
+        return cfg
+
 
 
 class IndexMaker():
@@ -151,6 +167,7 @@ class IndexMaker():
         '''
         file = self.output_path + "/" + str(self.file_count) + ".txt"
         pass    # change index to text and save
+
 
     def _merge_index(self):
         pass
@@ -183,10 +200,19 @@ class IndexMaker():
         dump_pickle(one_index, self.index_path)
         # dump_json(one_index, self.index_path)
 
-        self.data_parser.save_page_position()
+        self.data_parser.save_dicts()
         self.page_count = self.data_parser.page_count
 
         dump_json(self.vocab, self.vocab_path, indent=4)
+
+
+    def save_cfg(self, path):
+        cfg = self.data_parser.get_cfg()
+        for k, v in self.__dict__.items():
+            if type(v) == type("string") or type(v) == type(1):
+                cfg[k] = v
+        dump_json(cfg, path, indent=4)
+
 
 
 if __name__ == "__main__":
@@ -209,9 +235,7 @@ if __name__ == "__main__":
     index_maker.make_index()
 
     # save index info
-    index_maker.data_parser = index_maker.data_parser.name
-    index_maker.vocab = {}
-    dump_json(index_maker.__dict__, "data/index_test.json")
+    index_maker.save_cfg("data/index_test.json")
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")

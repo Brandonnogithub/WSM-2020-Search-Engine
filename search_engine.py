@@ -1,4 +1,5 @@
 import time
+import json
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
 from ranking.ranker import RankerBase
@@ -23,7 +24,11 @@ class SearchEngine():
         # self.tokenizer = BasicTokenizer(never_split=[])
         self.ranker_name = ranker_name
         self.ranker = rank_strategy[ranker_name]()
-        self.parser = parser_strategy[self.index_cfg["data_parser"]]()
+        self.parser = parser_strategy[self.index_cfg["name"]]()
+
+        # source file
+        self.fstream = open(self.index_cfg["data_path"], "r", encoding="utf8")
+        self.page_positions = load_pickle(self.index_cfg["page_positions_path"])
 
 
     def query(self, sen):
@@ -41,8 +46,9 @@ class SearchEngine():
             self.ranker_name = ranker_name
 
 
-    def get_docs(self, docID_list):
-        return None
+    def get_docs(self, docID):
+        self.fstream.seek(self.page_positions[docID], 0)
+        return json.loads(self.fstream.readline())
 
 
 def test():
