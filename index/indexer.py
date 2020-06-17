@@ -7,7 +7,7 @@ import argparse
 import json
 from collections import defaultdict
 from utils.io_utils import load_json, dump_pickle, dump_json
-from index.tokenization import BasicTokenizer
+from utils.tokenization import BasicTokenizer
 from string import punctuation
 from array import array
 from tqdm import tqdm
@@ -115,7 +115,7 @@ class WikiParser():
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
 
             self.page_count += 1
-            if self.debug and self.page_count > 10000:
+            if self.debug and self.page_count >= 10000:
                 break
 
         # yield word_index
