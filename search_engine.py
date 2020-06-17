@@ -26,7 +26,7 @@ class SearchEngine():
 
 
     def query(self, sen):
-        bow = self.parser.processed(sen)
+        bow = self.parser.preprocess_sen(sen)
         psts = []
         for w in bow:
             psts.append(self.index_pst[w])

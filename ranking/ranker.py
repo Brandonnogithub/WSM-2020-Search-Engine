@@ -9,5 +9,5 @@ class RankerBase():
         res = set()
         for pst in psts:
             for doc in pst[0]:
-                res.append(doc)
+                res.add(doc)
         return res

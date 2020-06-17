@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 class WikiParser():
     # a class to parser wiki dataset
-    def __init__(self, wiki_path, output_dir, debug=False):
+    def __init__(self, wiki_path="", output_dir="", debug=False):
         self.name = "WikiParser"
         self.wiki_path = wiki_path
         self.STOP_WORDS_PATH = os.path.join("index", "stop_words.json")
