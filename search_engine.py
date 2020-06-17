@@ -1,3 +1,4 @@
+import time
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
 from ranking.ranker import RankerBase
@@ -40,12 +41,19 @@ class SearchEngine():
             self.ranker_name = ranker_name
 
 
+    def get_docs(self, docID_list):
+        return None
+
+
 def test():
     cfg_path = "data/index_test.json"
     ranker_name = "base"
     sg = SearchEngine(cfg_path, ranker_name)
+    t = time.time()
     res = sg.query("delegitim")
+    t = time.time() - t
     print(res)
+    print(t)
 
 
 if __name__ == "__main__":
