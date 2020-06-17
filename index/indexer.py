@@ -21,7 +21,7 @@ class WikiParser():
         self.STOP_WORDS_PATH = os.path.join("index", "stop_words.json")
         self.stemmer = nltk.stem.SnowballStemmer('english')  # You can use porter or other stemmer
         self.stem_word_dict = defaultdict(lambda:False)
-        self.stop_words = load_json(self.STOP_WORDS_PATH)["stop_words"]
+        self.stop_words = set(load_json(self.STOP_WORDS_PATH)["stop_words"])
         self.tokenizer = BasicTokenizer(never_split=[])
         self.punctuation = re.compile(r"[{}]+".format(punctuation))
 
@@ -31,8 +31,8 @@ class WikiParser():
 
         self.debug = debug
 
-
-    def _preprocess_sen(self, sen):
+    
+    def preprocess_sen(self, sen):
         sen = sen.strip()   # remove "\n"
         sen = re.sub(self.punctuation, " ", sen).lower()    # remove punctuation
         sen_list = sen.split()      # tokenize
@@ -40,6 +40,8 @@ class WikiParser():
         # stemming
         res = []
         for word in sen_list:
+            if word in self.stop_words:
+                continue
             stem_word = self.stem_word_dict[word]
             if not stem_word:
                 stem_word = self.stemmer.stem(word) # do stemming
@@ -76,10 +78,9 @@ class WikiParser():
 
             # make index for title
             title = c_page["title"]
-            title_list = self._preprocess_sen(title)
+            title_list = self.preprocess_sen(title)
             for word in title_list:
-                if word not in self.stop_words:
-                    word_counter[word] += 1
+                word_counter[word] += 1
             for word in word_counter:
                 tmp = word + ".t"
                 if tmp in word_index:
@@ -97,10 +98,9 @@ class WikiParser():
                 if item:
                     if item.startswith("Section:"):
                         item = item[11:]
-                    item_list = self._preprocess_sen(item)
+                    item_list = self.preprocess_sen(item)
                     for word in item_list:
-                        if word not in self.stop_words:
-                            word_counter[word] += 1
+                        word_counter[word] += 1
             for word in word_counter:
                 if word in word_index:
                     word_index[word][0].append(self.page_count)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     # save index info
     index_maker.data_parser = index_maker.data_parser.name
     index_maker.vocab = {}
-    dump_json(index_maker.__dict__, "data/index.json")
+    dump_json(index_maker.__dict__, "data/index_test.json")
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")

@@ -19,25 +19,33 @@ class SearchEngine():
         self.index_pst = load_pickle(self.index_cfg["index_path"])
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
-        self.tokenizer = BasicTokenizer(never_split=[])
+        # self.tokenizer = BasicTokenizer(never_split=[])
+        self.ranker_name = ranker_name
         self.ranker = rank_strategy[ranker_name]()
-        self.parser = parser_strategy[self.index_cfg["data_parser"]]
+        self.parser = parser_strategy[self.index_cfg["data_parser"]]()
 
 
-    def query(self, word):
-        word_pst = self.index_pst[word]
-        print(word_pst)
+    def query(self, sen):
+        bow = self.parser.processed(sen)
+        psts = []
+        for w in bow:
+            psts.append(self.index_pst[w])
+        docID_list = self.ranker.ranking(bow, psts)
+        return docID_list
 
 
     def change_ranker(self, ranker_name):
-        pass
+        if self.ranker_name != ranker_name:
+            self.ranker = rank_strategy[ranker_name]()
+            self.ranker_name = ranker_name
 
 
 def test():
     cfg_path = "data/index_test.json"
     ranker_name = "base"
     sg = SearchEngine(cfg_path, ranker_name)
-    sg.query("delegitim")
+    res = sg.query("delegitim")
+    print(res)
 
 
 if __name__ == "__main__":
