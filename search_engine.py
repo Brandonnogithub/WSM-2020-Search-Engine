@@ -58,16 +58,20 @@ class SearchEngine():
 
 def test():
     cfg_path = "data/index_test.json"
-    ranker_name = "base"
+    ranker_name = "Tfidf"
     sg = SearchEngine(cfg_path, ranker_name)
     t = time.time()
     res = sg.query("delegitim")
+    print(res)
 
-    with open("data/processed/wiki_1000", 'r', encoding='utf-8') as f:
+    with open("data/processed/wiki_00", 'r', encoding='utf-8') as f:
         for r in res:
-            f.seek(sg.page_positions[r], 0)
-            line = eval(f.readline())
-            print(line['id'], line['title'])
+            print(sg.page_positions[r[0]])
+            f.seek(sg.page_positions[r[0]], 0)
+            context = f.readline()
+            # print(context)
+            line = json.loads(context)
+            # print(line['id'], line['title'])
 
     t = time.time() - t
     print(res)

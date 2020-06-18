@@ -14,6 +14,9 @@ class RankerBase():
         for pst in psts:
             for doc in pst[0]:
                 res.add(doc)
+        f_res = []
+        for i in res:
+            f_res.append((i,0))
         return res
 
 

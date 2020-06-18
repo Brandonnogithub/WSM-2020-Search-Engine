@@ -113,7 +113,7 @@ class WikiParser():
                     if item.startswith("Section:"):
                         item = item[11:]
                     item_list = self.preprocess_sen(item)
-                    self.page_len += item_list
+                    self.page_len += len(item_list)
                     for word in item_list:
                         word_counter[word] += 1
             for word in word_counter:
