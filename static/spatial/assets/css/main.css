@@ -2007,7 +2007,7 @@ body {
 
 body, input, select, textarea {
     font-family: "Raleway", Arial, Helvetica, sans-serif;
-    font-size: 13pt;
+    font-size: 10pt;
     font-weight: 400;
     line-height: 2em;
 }
@@ -2015,7 +2015,7 @@ body, input, select, textarea {
 @media screen and (max-width: 1680px) {
 
     body, input, select, textarea {
-        font-size: 11pt;
+        font-size: 10pt;
     }
 
 }
@@ -2023,7 +2023,7 @@ body, input, select, textarea {
 @media screen and (max-width: 1280px) {
 
     body, input, select, textarea {
-        font-size: 11pt;
+        font-size: 10pt;
     }
 
 }
@@ -2031,7 +2031,7 @@ body, input, select, textarea {
 @media screen and (max-width: 980px) {
 
     body, input, select, textarea {
-        font-size: 12pt;
+        font-size: 10pt;
     }
 
 }
@@ -2039,7 +2039,7 @@ body, input, select, textarea {
 @media screen and (max-width: 736px) {
 
     body, input, select, textarea {
-        font-size: 12pt;
+        font-size: 10pt;
     }
 
 }
@@ -2047,7 +2047,7 @@ body, input, select, textarea {
 @media screen and (max-width: 480px) {
 
     body, input, select, textarea {
-        font-size: 12pt;
+        font-size: 10pt;
     }
 
 }
@@ -2071,7 +2071,7 @@ em, i {
 }
 
 p {
-    margin: 0 0 2em 0;
+    margin: 0 0 4em 0;
 }
 
 .content p {
@@ -2083,7 +2083,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     line-height: 1em;
     margin: 0 0 1em 0;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
 }
 
 h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
@@ -2224,12 +2224,12 @@ button,
     cursor: pointer;
     display: inline-block;
     font-weight: 700;
-    height: 3.15em;
-    line-height: 3.25em;
+    height: 2em;
+    line-height: 2em;
     padding: 0 2.2em;
     text-align: center;
     text-decoration: none;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
     white-space: nowrap;
 }
 
@@ -2429,7 +2429,7 @@ button.special:active,
 @media screen and (max-width: 1280px) {
 
     .feature-grid .feature {
-        margin-bottom: 2em;
+        margin-bottom: -2em;
     }
 
 }
@@ -2480,7 +2480,7 @@ button.special:active,
 /* Form */
 
 form {
-    margin: 0 0 2em 0;
+    margin: 0 0 -2em 0;
 }
 
 label {
@@ -2594,8 +2594,9 @@ input[type="radio"] + label {
     color: #666;
     cursor: pointer;
     display: inline-block;
-    font-size: 1em;
+    font-size: 0.8em;
     font-weight: 400;
+    line-height: 2em;
     padding-left: 2.4em;
     padding-right: 0.75em;
     position: relative;
@@ -2800,8 +2801,8 @@ ol li {
 
 ul {
     list-style: disc;
-    margin: 0 0 2em 0;
-    padding-left: 1em;
+    margin: -4em 0 2em 5em;
+    padding-left: 1em;,
 }
 
 ul li {
@@ -2969,7 +2970,7 @@ header p {
     color: #006621; /*TEST*/
     position: relative;
     margin: 0 0 1.5em 0;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
 }
 
 header h2 + p {
@@ -2997,7 +2998,7 @@ header.major {
 }
 
 header.major h2 {
-    font-size: 3em;
+    font-size: 1.5em;
 }
 
 header.major h2, header.major h3, header.major h4, header.major h5, header.major h6 {
@@ -3017,11 +3018,11 @@ header.major p {
     }
 
     header.major h2 {
-        font-size: 2em;
-    }
+    font-size: 1.5em;
+}
 
     header.major p {
-        font-size: 1.1em;
+        font-size: 0.9em;
     }
 
 }
@@ -3029,11 +3030,11 @@ header.major p {
 @media screen and (max-width: 980px) {
 
     header.major h2 {
-        font-size: 1.3em;
-    }
+    font-size: 1.5em;
+}
 
     header.major p {
-        font-size: 1.1em;
+        font-size: 0.9em;
     }
 
 }
@@ -3041,7 +3042,7 @@ header.major p {
 @media screen and (max-width: 736px) {
 
     header.major {
-        margin-bottom: 2em;
+        margin-bottom: -2em;
     }
 
 }
@@ -3049,8 +3050,8 @@ header.major p {
 @media screen and (max-width: 480px) {
 
     header.major h2 {
-        font-size: 1.75em;
-    }
+    font-size: 1.5em;
+}
 
 }
 
@@ -3159,7 +3160,7 @@ body.is-touch .wrapper.style3 {
 @media screen and (max-width: 1280px) {
 
     .wrapper.style3 header.major {
-        margin-bottom: 2em;
+        margin-bottom: -2em;
     }
 
 }
@@ -3201,7 +3202,7 @@ body.is-touch .wrapper.style3 {
     left: 0;
     line-height: 4.4em;
     position: fixed;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
     top: 0;
     width: 100%;
     z-index: 10000;
@@ -3401,7 +3402,7 @@ body.is-touch .wrapper.style3 {
     max-width: 80%;
     width: 20em;
     padding: 0.5em 1.25em;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
 }
 
 #navPanel ul {
@@ -3527,13 +3528,13 @@ body.is-touch #banner {
     color: #aaa;
     font-size: 1.5em;
     margin-bottom: 1.75em;
-    text-transform: uppercase;
+    /*text-transform: uppercase;*/
 }
 
 @media screen and (max-width: 1280px) {
 
     #banner {
-        padding: 14em 0 11em 0;
+        padding: 14em 0 18em 0;
     }
 
     #banner h2 {
