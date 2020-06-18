@@ -1,5 +1,6 @@
 import time
 import json
+from collections import defaultdict
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
 from ranking.ranker import RankerBase
@@ -18,7 +19,7 @@ parser_strategy = {
 class SearchEngine():
     def __init__(self, index_config_path, ranker_name):
         self.index_cfg = load_json(index_config_path)
-        self.index_pst = load_pickle(self.index_cfg["index_path"])
+        self.index_pst = defaultdict(lambda:[], load_pickle(self.index_cfg["index_path"]))
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
         # self.tokenizer = BasicTokenizer(never_split=[])
