@@ -1,5 +1,5 @@
 from math import log10
-from utils.io_utils import load_json
+from utils.io_utils import load_json, load_pickle
 from collections import defaultdict
 
 class RankerBase():
@@ -21,8 +21,8 @@ class TfidfRanker(RankerBase):
     # using tf idf to rank
     def __init__(self, doc_total, doc_len_path):
         super(TfidfRanker, self).__init__()
-        self.doc_total = doc_total
-        self.doc_len = load_json(doc_len_path)
+        self.doc_total = doc_total                  # 6047512 for wiki
+        self.doc_len = load_pickle(doc_len_path)    # a list
 
 
     def ranking(self, bow, psts):

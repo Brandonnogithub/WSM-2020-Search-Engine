@@ -13,6 +13,9 @@ from array import array
 from tqdm import tqdm
 
 
+page_total = 6047512
+
+
 class WikiParser():
     # a class to parser wiki dataset
     def __init__(self, data_path="", output_dir="", debug=False):
@@ -34,6 +37,9 @@ class WikiParser():
         self.page_count = 0 # denote which number of wiki page it is
         self.page_positions = dict()    # store position of each page in source file
         self.page_positions_path = output_dir + "/page_positions.pickle"
+        self.page_len_path = output_dir + "/page_len.pickle"    # a list to store length of each page
+        self.page_len_list = []
+        self.page_len = 0
 
         self.debug = debug
 
@@ -78,13 +84,15 @@ class WikiParser():
         # don't use defaultdict, it can not be pickled
         word_index = dict()   # here i use word.t to represent word in title, fist list of tuple is doc id list, sencond list of tuple is frequency list
 
-        for c_page, seek_pos in tqdm(self._readlines(), total=6047512):
+        for c_page, seek_pos in tqdm(self._readlines(), total=page_total):
             word_counter = defaultdict(lambda:0)
             self.page_positions[self.page_count] = seek_pos
+            self.page_len = 0
 
             # make index for title
             title = c_page["title"]
             title_list = self.preprocess_sen(title)
+            self.page_len += len(title_list)
             for word in title_list:
                 word_counter[word] += 1
             for word in word_counter:
@@ -105,6 +113,7 @@ class WikiParser():
                     if item.startswith("Section:"):
                         item = item[11:]
                     item_list = self.preprocess_sen(item)
+                    self.page_len += item_list
                     for word in item_list:
                         word_counter[word] += 1
             for word in word_counter:
@@ -119,10 +128,14 @@ class WikiParser():
             # if pages_per_file > 0 and self.page_count >= pages_per_file:
             #     yield word_index
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
+            self.page_len_list.append(self.page_len)
 
             self.page_count += 1
             if self.debug and self.page_count >= 10000:
                 break
+
+        if not self.debug:
+            assert page_total == self.page_count
 
         # yield word_index
         return word_index
@@ -130,6 +143,7 @@ class WikiParser():
 
     def save_dicts(self):
         dump_pickle(self.page_positions, self.page_positions_path)
+        dump_pickle(self.page_len_list, self.page_len_path)
         dump_json(self.stem_word_dict, self.stemmer_path, indent=4)
 
 

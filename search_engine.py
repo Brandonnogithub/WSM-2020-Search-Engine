@@ -3,13 +3,9 @@ import json
 from collections import defaultdict
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
-from ranking.ranker import RankerBase
+from ranking.ranker import RankerBase, TfidfRanker
 from index.indexer import WikiParser
 
-
-rank_strategy = {
-    "base": RankerBase
-}
 
 parser_strategy = {
     "WikiParser": WikiParser
@@ -23,13 +19,22 @@ class SearchEngine():
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
         # self.tokenizer = BasicTokenizer(never_split=[])
-        self.ranker_name = ranker_name
-        self.ranker = rank_strategy[ranker_name]()
+        self._start_ranker(ranker_name)
         self.parser = parser_strategy[self.index_cfg["name"]]()
 
         # source file
         self.fstream = open(self.index_cfg["data_path"], "r", encoding="utf8")
         self.page_positions = load_pickle(self.index_cfg["page_positions_path"])
+
+    
+    def _start_ranker(self, ranker_name):
+        if ranker_name == "base":
+            self.ranker = RankerBase()
+        elif ranker_name == "Tfidf":
+            self.ranker = TfidfRanker(self.page_count, self.index_cfg["page_len_path"])
+        else:
+            self.ranker = None
+        self.ranker_name = ranker_name
 
 
     def query(self, sen):
@@ -43,8 +48,7 @@ class SearchEngine():
 
     def change_ranker(self, ranker_name):
         if self.ranker_name != ranker_name:
-            self.ranker = rank_strategy[ranker_name]()
-            self.ranker_name = ranker_name
+            self._start_ranker(ranker_name)
 
 
     def get_docs(self, docID):
