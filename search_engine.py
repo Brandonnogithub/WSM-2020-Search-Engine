@@ -57,6 +57,13 @@ def test():
     sg = SearchEngine(cfg_path, ranker_name)
     t = time.time()
     res = sg.query("delegitim")
+
+    with open("data/processed/wiki_1000", 'r', encoding='utf-8') as f:
+        for r in res:
+            f.seek(sg.page_positions[r], 0)
+            line = eval(f.readline())
+            print(line['id'], line['title'])
+
     t = time.time() - t
     print(res)
     print(t)

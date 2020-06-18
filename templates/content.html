@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{doc.title}}</title>
+</head>
+<body>
+    <div id="basic" align="center">
+        <h1>{{doc.title}}</h1>
+        <p><a href="{{doc.url}}" target="_blank">Source Page</a></p>
+    </div>
+    <hr/>
+    
+    <div id="detail" align="left">
+        <table width="800" border="0">
+            {% for text in doc.text1 %}
+                {% if text != "" and text[0] == ":" %}
+                    <h3> Section{{text}} </h3>
+                    <hr/>            
+                {% elif text != "" %}
+                    <p> {{text}} </p>
+                {% endif %}
+                
+            {%endfor%}
+        </table>
+    </div>
+
+</body>
+</html>

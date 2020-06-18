@@ -1,77 +1,178 @@
 import os
+import math
+import re
+import time
 import argparse
 from urllib import parse
 from flask import Flask, request, render_template
+from search_engine import SearchEngine
+
 
 # init flask app and env variables
 app = Flask(__name__)
 host = os.getenv("HOST")
 port = os.getenv("PORT")
 
+# init search engine
+cfg_path = "data/index_test.json"
+ranker_name = "base"
+input_dir = "data/processed/wiki_1000"
+sg = SearchEngine(cfg_path, ranker_name)
 
-@app.route("/", methods=['GET'])
+hits = 10
+num_ra = 5
+max_show_pages = 5
+
+
+@app.route("/")
+def main():
+    return render_template("main.html")
+
+
+@app.route("/search/", methods=['GET'])
 def search():
+    # try:
     """
-    URL : /
-    Query engine to find a list of relevant URLs.
-    Method : POST or GET (no query)
-    Form data :
-        - query : the search query
-        - hits : the number of hits returned by query
-        - start : the start of hits
-    Return a template view with the list of relevant URLs.
+        TODO: excute search
     """
+    global checked
+    global range_pages
+    global query
+    global doc_id
+    global maxi
+    
+    checked = ["checked='true", "", "", "", ""]
+
     # GET data
+    t_start = time.time()
     query = request.args.get("query", None)
-    start = request.args.get("start", 0, type=int)
-    hits = request.args.get("hits", 10, type=int)
-    if start < 0 or hits < 0:
-        return "Error, start or hits cannot be negative numbers"
+    doc_id = list(sg.query(query))
+    doc_num = len(doc_id)
+    if doc_num == 0:
+        matched = False
+    else:
+        matched = True
 
-    if query:
-        # query search engine
-        # try :
-        #     r = requests.post('http://%s:%s/search'%(host, port), data = {
-        #         'query':query,
-        #         'hits':hits,
-        #         'start':start
-        #     })
-        # except :
-        #     return "Error, check your installation"
+    maxi = math.ceil(doc_num / hits)
+    range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
+    first_page_results = cut_page(0)
+    response_time = round(time.time() - t_start, 2)
 
-        # get data and compute range of results pages
-        # data = r.json()
-        # print(data)
-        data = {
-            "total": 20,
-            "results": [
-                {
-                    "title": "amd Yes " + str(i + 1),
-                    "description": "des sha" * 100,
-                    "url": "https://www.baidu.com",
-                    "thumbnail": "static/spatial/images/pic07.jpg",
-                }
-                for i in range(20)
-            ],
-        }
-        i = int(start / hits)
-        maxi = 1 + int(data["total"] / hits)
-        range_pages = range(i - 5, i + 5 if i + 5 < maxi else maxi) if i >= 6 else range(0, maxi if maxi < 10 else 10)
+    # show the list of matching results
+    return render_template('index.html', query=query,
+                            response_time=response_time,
+                            total=doc_num,
+                            range_pages=range_pages,
+                            results=first_page_results,
+                            page=1,
+                            maxpage=maxi,
+                            checked=checked,
+                            matched=matched)    
+    # except:
+    #     print('search error')
 
-        # show the list of matching results
-        return render_template('spatial/index.html', query=query,
-                               # response_time=r.elapsed.total_seconds(),
-                               response_time=10.56,
-                               total=data["total"],
-                               hits=hits,
-                               start=start,
-                               range_pages=range_pages,
-                               results=data["results"],
-                               page=i,
-                               maxpage=maxi - 1)
 
-    # return homepage (no query)
-    return render_template('spatial/index.html')
+
+@app.route('/search/<query>/', methods=['GET'])
+def high_search(query):
+    # try:
+    global doc_id
+    global maxi
+    global checked
+    selected = int(request.args.get('order')) - 1
+    for i in range(num_ra):
+        if i == selected:
+            checked[i] = 'checked="true"'
+        else:
+            checked[i] = ''
+
+    # TODO: same query with different rank algorithm
+    t_start = time.time()
+    # sg.ranker_name = selected
+    # doc_id = list(sg.query(query))
+    doc_num = len(doc_id)
+    if doc_num == 0:
+        matched = False
+    else:
+        matched = True
+    maxi = math.ceil(doc_num / hits)
+    range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
+    first_page_results = cut_page(0)
+    response_time = round(time.time()-t_start, 2)
+
+    # show the list of matching results
+    return render_template('index.html', query=query,
+                            response_time=response_time,
+                            total=doc_num,
+                            range_pages=range_pages,
+                            results=first_page_results,
+                            page=1,
+                            maxpage=maxi,
+                            checked=checked,
+                            matched=matched)  
+
+    # except:
+    #     print('high search error')
+
+
+@app.route('/search/pages/0/', methods=['GET'])
+def next_page():
+    global range_pages
+    t_start = time.time()
+    current_page = int(request.args.get("current_page"))
+    next_result = cut_page(current_page-1)
+    response_time = round(time.time()-t_start, 2)
+    if current_page > range_pages[-1]:
+        start_page = current_page
+        end_page = start_page+max_show_pages if start_page+max_show_pages < maxi else maxi
+        range_pages = range(start_page, end_page)
+    if current_page < range_pages[0]:
+        start_page = current_page-max_show_pages+1 if current_page-max_show_pages+1 > 1 else 1
+        end_page = start_page+max_show_pages
+        range_pages = range(start_page, end_page)
+    print(range_pages)
+
+    return render_template('index.html', query=query,
+                        response_time=response_time,
+                        total=len(doc_id),
+                        range_pages=range_pages,
+                        results=next_result,
+                        page=current_page,
+                        maxpage=maxi,
+                        checked=checked,
+                        matched=True)  
+
+
+@app.route('/search/pages/1/', methods=['GET'])
+def show_content():
+    real_doc_id = int(request.args.get('real_id'))
+    rst = read_doc_content([real_doc_id])[0]
+    rst['text1'] = re.split("\n|Section:::", rst['text'])[1:]
+    # with open('1.txt', 'w') as f:
+    #     for tt in rst['text1']:
+    #         print(tt)
+    #         f.write(tt)
+    #         f.write("\n===============\n")
+    # exit()
+    return render_template('content.html', doc=rst) 
+
+
+def cut_page(start):
+    sub_doc_id = doc_id[start*hits:(start+1)*hits]
+    return read_doc_content(sub_doc_id)
+
+
+def read_doc_content(doc_id_list):
+    docs = []
+    for id_ in doc_id_list:
+        with open(input_dir, 'r', encoding="utf8") as f:
+            f.seek(sg.page_positions[id_], 0)
+            line = eval(f.readline())
+            line['real_id'] = id_
+        docs.append(line)
+
+    return docs
+
 
 
 # -- JINJA CUSTOM FILTERS -- #
