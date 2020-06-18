@@ -41,6 +41,9 @@ class WikiParser():
         self.page_len_list = []
         self.page_len = 0
 
+        self.page_word_index_path = output_dir + "/page_word_idnex.pickle"
+        self.page_word_index = []
+
         self.debug = debug
 
     
@@ -129,6 +132,7 @@ class WikiParser():
             #     yield word_index
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
             self.page_len_list.append(self.page_len)
+            self.page_word_index.append(dict(word_counter))
 
             self.page_count += 1
             if self.debug and self.page_count >= 10000:
@@ -144,6 +148,7 @@ class WikiParser():
     def save_dicts(self):
         dump_pickle(self.page_positions, self.page_positions_path)
         dump_pickle(self.page_len_list, self.page_len_path)
+        dump_pickle(self.page_word_index, self.page_word_index_path)
         dump_json(self.stem_word_dict, self.stemmer_path, indent=4)
 
 

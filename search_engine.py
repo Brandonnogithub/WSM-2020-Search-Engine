@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
-from ranking.ranker import RankerBase, TfidfRanker, BM25Ranker
+from ranking.ranker import RankerBase, TfidfRanker, BM25Ranker, VSMRanker
 from index.indexer import WikiParser
 
 
@@ -19,6 +19,7 @@ class SearchEngine():
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
         # self.tokenizer = BasicTokenizer(never_split=[])
+        self.ranker = None
         self._start_ranker(ranker_name)
         self.parser = parser_strategy[self.index_cfg["name"]]()
 
@@ -31,9 +32,13 @@ class SearchEngine():
         if ranker_name == "base":
             self.ranker = RankerBase()
         elif ranker_name == "Tfidf":
-            self.ranker = TfidfRanker(self.page_count, self.index_cfg["page_len_path"])
+            self.ranker = TfidfRanker(self.page_count, self.index_cfg["page_len_path"], last_ranker=self.ranker)
         elif ranker_name == "bm25":
-            self.ranker = BM25Ranker(self.page_count, self.index_cfg["page_len_path"])
+            self.ranker = BM25Ranker(self.page_count, self.index_cfg["page_len_path"], last_ranker=self.ranker)
+        elif ranker_name == "VSM-tf":
+            self.ranker = VSMRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.index_pst, use_tf=True, last_ranker=self.ranker)
+        elif ranker_name == "VSM-tfidf":
+            self.ranker = VSMRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.index_pst, use_tf=False, last_ranker=self.ranker)
         else:
             self.ranker = None
         self.ranker_name = ranker_name
