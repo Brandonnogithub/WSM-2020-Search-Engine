@@ -17,7 +17,7 @@ class RankerBase():
         f_res = []
         for i in res:
             f_res.append((i,0))
-        return res
+        return f_res
 
 
 class TfidfRanker(RankerBase):
@@ -61,7 +61,7 @@ class BM25Ranker(RankerBase):
             doc_list, fre_list = psts[i]
             doc_count = len(doc_list)
             for j, docID in enumerate(doc_list):
-                k = self.k1 * (1 - self.b + b * self.doc_len[docID] / self.avglen)
+                k = self.k1 * (1 - self.b + self.b * self.doc_len[docID] / self.avglen)
                 r = fre_list[j] * (self.k1 + 1) / (fre_list[j] + k)
                 idf = log10((self.doc_total - doc_count + 0.5) / (doc_count + 0.5))
                 res[docID] += r * idf

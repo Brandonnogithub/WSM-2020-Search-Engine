@@ -15,8 +15,8 @@ port = os.getenv("PORT")
 
 # init search engine
 cfg_path = "data/index_test.json"
-ranker_name_list = ["Tfidf", "base", "Tfidf", "Tfidf", "Tfidf"]
-sg = SearchEngine(cfg_path, ranker_name_list[0])
+ranker_name_list = ["base", "Tfidf", "bm25", "Tfidf", "Tfidf"]
+sg = SearchEngine(cfg_path, ranker_name_list[1])
 
 hits = 10
 num_ra = 5
@@ -40,7 +40,7 @@ def search():
     global doc_id
     global maxi
     
-    checked = ["checked='true", "", "", "", ""]
+    checked = ["", "checked='true", "", "", ""]
 
     # GET data
     t_start = time.time()
