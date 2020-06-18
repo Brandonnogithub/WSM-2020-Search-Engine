@@ -15,7 +15,7 @@ parser_strategy = {
 class SearchEngine():
     def __init__(self, index_config_path, ranker_name):
         self.index_cfg = load_json(index_config_path)
-        self.index_pst = defaultdict(lambda:[], load_pickle(self.index_cfg["index_path"]))
+        self.index_pst = defaultdict(lambda:[[],[]], load_pickle(self.index_cfg["index_path"]))
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
         # self.tokenizer = BasicTokenizer(never_split=[])
@@ -61,7 +61,7 @@ def test():
     ranker_name = "Tfidf"
     sg = SearchEngine(cfg_path, ranker_name)
     t = time.time()
-    res = sg.query("delegitim")
+    res = sg.query("jflskdjg")
     print(res)
 
     with open("data/processed/wiki_00", 'r', encoding='utf-8') as f:
