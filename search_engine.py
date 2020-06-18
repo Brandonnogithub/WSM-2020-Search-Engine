@@ -39,8 +39,11 @@ class SearchEngine():
         self.ranker_name = ranker_name
 
 
-    def query(self, sen):
+    def query(self, sen, only_title=False):
         bow = self.parser.preprocess_sen(sen)
+        if only_title:
+            for i, x in enumerate(bow):
+                bow[i] = x + ".t"
         psts = []
         for w in bow:
             psts.append(self.index_pst[w])
