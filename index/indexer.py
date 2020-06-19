@@ -266,7 +266,7 @@ def update_page_word_index():
         sum_v = 0
         for k, v in x.items():
             sum_v += (v * log10(page_count / (len(index[k][0]) + 1))) ** 2
-        if doclen[i]:
+        if doc_len[i]:
             sum_v = (sum_v / doc_len[i]) ** 0.5
         else:
             sum_v = 0
