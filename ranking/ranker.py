@@ -6,9 +6,15 @@ from collections import defaultdict
 
 class RankerBase():
     # keep all
-    def __init__(self):
-        self.doc_len = None
-        self.doc_word_index = None
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, last_ranker=None):
+        self.doc_total = doc_total
+        if last_ranker:
+            self.doc_len = last_ranker.doc_len
+            self.doc_word_index = last_ranker.doc_word_index
+        else:
+            self.doc_len = load_pickle(doc_len_path)    # a list
+            self.doc_word_index = load_pickle(doc_word_index_path)  # list of dicts
+
 
 
     def ranking(self, bow, psts):
@@ -25,13 +31,8 @@ class RankerBase():
 
 class TfidfRanker(RankerBase):
     # using tf idf to rank
-    def __init__(self, doc_total, doc_len_path, last_ranker=None):
-        super(TfidfRanker, self).__init__()
-        self.doc_total = doc_total                  # 6047512 for wiki
-        if last_ranker and last_ranker.doc_len:
-            self.doc_len = last_ranker.doc_len
-        else:
-            self.doc_len = load_pickle(doc_len_path)    # a list
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, last_ranker=None):
+        super(TfidfRanker, self).__init__(doc_total, doc_len_path, doc_word_index_path, last_ranker=last_ranker)
 
 
     def ranking(self, bow, psts):
@@ -48,13 +49,8 @@ class TfidfRanker(RankerBase):
 
 class BM25Ranker(RankerBase):
     # using bm25, which is similar to tf-idf
-    def __init__(self, doc_total, doc_len_path, last_ranker=None):
-        super(BM25Ranker, self).__init__()
-        self.doc_total = doc_total                  # 6047512 for wiki
-        if last_ranker and last_ranker.doc_len:
-            self.doc_len = last_ranker.doc_len
-        else:
-            self.doc_len = load_pickle(doc_len_path)    # a list
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, last_ranker=None):
+        super(BM25Ranker, self).__init__(doc_total, doc_len_path, doc_word_index_path, last_ranker=last_ranker)
         self.k1 = 2
         self.b = 0.75
 
@@ -80,17 +76,8 @@ class BM25Ranker(RankerBase):
 class VSMRanker(RankerBase):
     # vector space model, use tf or normalized tf
     def __init__(self, doc_total, doc_len_path, doc_word_index_path, index, use_tf=True, last_ranker=None):
-        super(VSMRanker, self).__init__()
-        self.doc_total = doc_total                  # 6047512 for wiki
-        if last_ranker:
-            if last_ranker.doc_len:
-                self.doc_len = last_ranker.doc_len
-            else:
-                self.doc_len = load_pickle(doc_len_path)    # a list
-            if last_ranker.doc_word_index:
-                self.doc_word_index = last_ranker.doc_word_index
-            else:
-                self.doc_word_index = load_pickle(doc_word_index_path)  # list of dicts
+        super(VSMRanker, self).__init__(doc_total, doc_len_path, doc_word_index_path, last_ranker=last_ranker)
+
         self.use_tf = use_tf
         if use_tf:
             self.index = None
@@ -145,19 +132,9 @@ class SLMARanker(RankerBase):
     Laplace smoothing: delta=1, P(w|D) = (c(w|D) + 1) / (doc_len + |Vocab|)
     '''
     def __init__(self, doc_total, doc_len_path, doc_word_index_path, voc_len, delta=0.5, last_ranker=None):
-        super(SLMARanker, self).__init__()
-        self.doc_total = doc_total                  # 6047512 for wiki
+        super(SLMARanker, self).__init__(doc_total, doc_len_path, doc_word_index_path, last_ranker)
         self.delta = delta  # (0,1]
         self.voc_len = voc_len * delta
-        if last_ranker:
-            if last_ranker.doc_len:
-                self.doc_len = last_ranker.doc_len
-            else:
-                self.doc_len = load_pickle(doc_len_path)    # a list
-            if last_ranker.doc_word_index:
-                self.doc_word_index = last_ranker.doc_word_index
-            else:
-                self.doc_word_index = load_pickle(doc_word_index_path)  # list of dicts
 
 
     def ranking(self, bow, psts):
@@ -188,21 +165,10 @@ class SLMDRanker(RankerBase):
     MLE: P(w|D) = c(w|D) / sum(c(w|D))
     '''
     def __init__(self, doc_total, doc_len_path, doc_word_index_path, vocab, total_word, lambda_=0.5, last_ranker=None):
-        super(SLMDRanker, self).__init__()
-        self.doc_total = doc_total                  # 6047512 for wiki
+        super(SLMDRanker, self).__init__(doc_total, doc_len_path, doc_word_index_path, last_ranker)
         self.lambda_ = lambda_  # [0,1]
         self.vocab = vocab
         self.total_word = total_word
-
-        if last_ranker:
-            if last_ranker.doc_len:
-                self.doc_len = last_ranker.doc_len
-            else:
-                self.doc_len = load_pickle(doc_len_path)    # a list
-            if last_ranker.doc_word_index:
-                self.doc_word_index = last_ranker.doc_word_index
-            else:
-                self.doc_word_index = load_pickle(doc_word_index_path)  # list of dicts
 
 
     def ranking(self, bow, psts):

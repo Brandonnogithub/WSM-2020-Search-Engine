@@ -37,11 +37,11 @@ class SearchEngine():
     
     def _start_ranker(self, ranker_name):
         if ranker_name == "base":
-            self.ranker = RankerBase()
+            self.ranker = RankerBase(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], last_ranker=self.ranker)
         elif ranker_name == "Tfidf":
-            self.ranker = TfidfRanker(self.page_count, self.index_cfg["page_len_path"], last_ranker=self.ranker)
+            self.ranker = TfidfRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], last_ranker=self.ranker)
         elif ranker_name == "bm25":
-            self.ranker = BM25Ranker(self.page_count, self.index_cfg["page_len_path"], last_ranker=self.ranker)
+            self.ranker = BM25Ranker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], last_ranker=self.ranker)
         elif ranker_name == "VSM-tf":
             self.ranker = VSMRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.index_pst, use_tf=True, last_ranker=self.ranker)
         elif ranker_name == "VSM-tfidf":
