@@ -55,10 +55,13 @@ class SearchEngine():
     def query(self, sen, only_title=False):
         bow = self.parser.preprocess_sen(sen)
         if only_title:
-            for i, x in enumerate(bow):
-                bow[i] = x + ".t"
+            query_bow = []
+            for x in bow:
+                query_bow.appen(x + ".t")
+        else:
+            query_bow = bow
         psts = []
-        for w in bow:
+        for w in query_bow:
             psts.append(self.index_pst[w])
         docID_list = self.ranker.ranking(bow, psts)
         return docID_list
