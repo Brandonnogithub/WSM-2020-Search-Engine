@@ -79,7 +79,7 @@ def search():
     first_page_results = cut_page(0)
     response_time = round(time.time() - t_start, 4)
 
-    print(first_page_results[0].keys())
+    # print(first_page_results[0].keys())
 
     # show the list of matching results
     return render_template('index.html', query=query,
