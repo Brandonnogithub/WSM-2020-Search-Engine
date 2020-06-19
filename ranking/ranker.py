@@ -81,7 +81,7 @@ class BM25Ranker(RankerBase):
 
 class VSMRanker(RankerBase):
     # vector space model, use tf or normalized tf
-    def __init__(self, doc_tol, doc_len_path, doc_word_index_path, index, use_tf=True, last_ranker=None):
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, index, use_tf=True, last_ranker=None):
         super(VSMRanker, self).__init__()
         self.doc_total = doc_total                  # 6047512 for wiki
         if last_ranker:
@@ -150,7 +150,7 @@ class SLMARanker(RankerBase):
     MLE: P(w|D) = c(w|D) / sum(c(w|D))
     Laplace smoothing: delta=1, P(w|D) = (c(w|D) + 1) / (doc_len + |Vocab|)
     '''
-    def __init__(self, doc_tol, doc_len_path, doc_word_index_path, voc_len, delta=0.5, last_ranker=None):
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, voc_len, delta=0.5, last_ranker=None):
         super(SLMARanker, self).__init__()
         self.doc_total = doc_total                  # 6047512 for wiki
         self.delta = delta  # (0,1]
@@ -193,7 +193,7 @@ class SLMDRanker(RankerBase):
     P(D)*P(q|D), P(D) is the same, P(q|D) = \Pi P(w|D) (using log, equal to sum(logP(w|D)))
     MLE: P(w|D) = c(w|D) / sum(c(w|D))
     '''
-    def __init__(self, doc_tol, doc_len_path, doc_word_index_path, vocab, lambda_=0.5, last_ranker=None):
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, vocab, lambda_=0.5, last_ranker=None):
         super(SLMDRanker, self).__init__()
         self.doc_total = doc_total                  # 6047512 for wiki
         self.lambda_ = lambda_  # [0,1]
