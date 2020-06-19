@@ -271,6 +271,21 @@ def update_page_word_index():
     dump_pickle(doc_word_index, index_cfg["page_word_index_path"])
     
 
+def test():
+    index_cfg = load_json(settings.cfg_path)
+    doc_word_index = load_pickle(index_cfg["page_word_index_path"]) # list
+    page_count =index_cfg["page_count"]
+    doc_len = load_pickle(index_cfg["page_len_path"])
+
+    fstream = open(index_cfg["data_path"], "r", encoding="utf8")
+    page_positions = load_pickle(index_cfg["page_positions_path"])
+
+    for i, x in enumerate(doc_word_index):
+        if doc_len[i] == 0:
+            fstream.seek(page_positions[i], 0)
+            print(fstream.readline())
+            return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -287,15 +302,17 @@ if __name__ == "__main__":
 
     start = time.time() # time start
 
-    wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
-    index_maker = IndexMaker(wiki_parser, args.output_dir)
-    index_maker.make_index()
+    # wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
+    # index_maker = IndexMaker(wiki_parser, args.output_dir)
+    # index_maker.make_index()
 
-    # save index info
-    index_maker.save_cfg(settings.cfg_path)
+    # # save index info
+    # index_maker.save_cfg(settings.cfg_path)
 
-    # update page word index
-    update_page_word_index()
+    # # update page word index
+    # update_page_word_index()
+
+    test()
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")
