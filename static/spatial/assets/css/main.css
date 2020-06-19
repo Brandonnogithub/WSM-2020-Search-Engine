@@ -187,7 +187,7 @@ body {
  }
 
     .container {
-        width: 65em;
+        width: 60%;
     }
 
 }
@@ -1977,6 +1977,9 @@ body {
 
 body.landing {
     padding-top: 0 !important;
+    /*padding-right: 20% !important;*/
+    /*padding-left: 20% !important;*/
+    /*width: 90%;*/
 }
 
 @media screen and (max-width: 980px) {
@@ -2801,7 +2804,7 @@ ol li {
 
 ul {
     list-style: disc;
-    margin: -4em 0 2em 5em;
+    margin: 0 0 3em 3em;
     padding-left: 1em;,
 }
 
@@ -3534,7 +3537,7 @@ body.is-touch #banner {
 @media screen and (max-width: 1280px) {
 
     #banner {
-        padding: 14em 0 18em 0;
+        padding: 14em 0 28em 0;
     }
 
     #banner h2 {

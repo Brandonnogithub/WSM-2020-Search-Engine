@@ -6,6 +6,7 @@ import argparse
 from urllib import parse
 from flask import Flask, request, render_template
 from search_engine import SearchEngine
+import nltk
 
 
 # init flask app and env variables
@@ -77,6 +78,8 @@ def search():
     range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
     first_page_results = cut_page(0)
     response_time = round(time.time() - t_start, 4)
+
+    print(first_page_results[0].keys())
 
     # show the list of matching results
     return render_template('index.html', query=query,
@@ -158,6 +161,19 @@ def truncate_title(title):
     """
     return title if len(title) <= 70 else title[:70] + "..."
 
+@app.context_processor
+def utility_processor():
+    def highlight(text, query):
+        text.replace(query, "<mark>"+query+"</mark>")
+        # text_list = text.split(' ')
+        # for i, word in enumerate(text_list):
+        #     if query in word:
+        #         text0 = " ".join(text_list[:i])
+        #         text1 = " ".join(text_list[i+1:])
+        print(text)
+        return text
+
+    return dict(highlight=highlight)
 
 @app.template_filter('truncate_description')
 def truncate_description(description):
