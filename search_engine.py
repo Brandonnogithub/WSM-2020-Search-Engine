@@ -57,7 +57,7 @@ class SearchEngine():
         if only_title:
             query_bow = []
             for x in bow:
-                query_bow.appen(x + ".t")
+                query_bow.append(x + ".t")
         else:
             query_bow = bow
         psts = []
