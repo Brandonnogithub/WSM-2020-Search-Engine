@@ -112,14 +112,10 @@ class VSMRanker(RankerBase):
                 for docID in doc_list:
                     if not visted[docID]:
                         word_index = self.doc_word_index[docID]
-                        sum_v = 0
-                        for v in word_index.values():
-                            sum_v += v ** 2
-                        sum_v = sum_v ** 0.5
                         tmp = 0
                         for word in bow_dict:
                             tmp += bow_dict[word] * word_index[word]
-                        res[docID] = tmp / sum_v
+                        res[docID] = tmp / word_index["_sum"]
                         visted[docID] = True
         else:
             # use tf-idf

@@ -67,7 +67,7 @@ class SearchEngine():
         for w in query_bow:
             psts.append(self.index_pst[w])
         docID_list = self.ranker.ranking(bow, psts)
-        return docID_list, bow
+        return docID_list
 
 
     def change_ranker(self, ranker_name):
@@ -119,34 +119,6 @@ def test():
             context = f.readline()
             line = json.loads(context)["text"]
             # print(line['id'], line['title'])
-
-            tmp = []
-            tag = True  # last is punc
-            for i, s in enumerate(line):
-                # print(s)
-                if s in punc:
-                    if tag:
-                        continue
-                    pos_e = i
-                    word = line[pos_s:pos_e]
-                    word = sg.parser.preprocess_word(word)
-                    # print([word])
-                    if word in bow:
-                        tmp.append((pos_s, pos_e))
-                    tag = True
-                else:
-                    if tag:
-                        pos_s = i
-                        tag = False
-
-
-            # print(tmp)
-            for i in tmp:
-                print(line[i[0]:i[1]])
-                pass
-            print(count)
-
-
 
     t = time.time() - t
     print(t)

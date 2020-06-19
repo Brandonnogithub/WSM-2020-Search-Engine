@@ -144,6 +144,12 @@ class WikiParser():
             #     yield word_index
             #     word_index = defaultdict(lambda:(array("L",[]),array("L",[])))
             self.page_len_list.append(self.page_len)
+
+            sum_v = 0
+            for v in word_counter.values():
+                sum_v += v ** 2
+            sum_v = sum_v ** 0.5
+            word_counter["_sum"] = sum_v
             self.page_word_index.append(dict(word_counter))
 
             self.page_count += 1
