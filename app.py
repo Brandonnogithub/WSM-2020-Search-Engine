@@ -3,6 +3,7 @@ import math
 import re
 import time
 import argparse
+import settings
 from urllib import parse
 from flask import Flask, request, render_template
 from search_engine import SearchEngine
@@ -15,7 +16,7 @@ host = os.getenv("HOST")
 port = os.getenv("PORT")
 
 # init search engine
-cfg_path = "data/index_test.json"
+cfg_path = settings.cfg_path
 ranker_name_list = ["base", "Tfidf", "bm25", "VSM-tf", "VSM-tfidf", "SLM-A", "SLM-D"]
 checked = ["", "checked='true", "", "", "", "", ""]
 selected = 1

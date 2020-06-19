@@ -287,12 +287,12 @@ if __name__ == "__main__":
 
     start = time.time() # time start
 
-    # wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
-    # index_maker = IndexMaker(wiki_parser, args.output_dir)
-    # index_maker.make_index()
+    wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
+    index_maker = IndexMaker(wiki_parser, args.output_dir)
+    index_maker.make_index()
 
-    # # save index info
-    # index_maker.save_cfg(settings.cfg_path)
+    # save index info
+    index_maker.save_cfg(settings.cfg_path)
 
     # update page word index
     update_page_word_index()
