@@ -130,7 +130,7 @@ class VSMRanker(RankerBase):
                         word_index = self.doc_word_index[docID]
                         sum_v = 0
                         for k, v in word_index.items():
-                            sum_v += (v * log10(self.doc_total / (len(self.index[k][0]) + 1)))) ** 2
+                            sum_v += (v * log10(self.doc_total / (len(self.index[k][0]) + 1))) ** 2
                         sum_v = (sum_v / self.doc_len[docID]) ** 0.5
                         tmp = 0
                         for word in bow_dict:
