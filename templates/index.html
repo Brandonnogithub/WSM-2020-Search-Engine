@@ -56,7 +56,7 @@
                             <h4><a href="/search/pages/1/?real_id={{ result.real_id }}">{{ result.title|safe|truncate_title }}</a></h4>
                             <p><a href="{{ result.url|truncate_url }}">{{ result.url|safe|truncate_url }}</a></>
                         </header>
-                        <p>{{ result.text|safe|truncate_description }}</p>
+                        <p>{{ result.description|safe }}</p>
                     </div>
                 </div>
             {% endfor %}

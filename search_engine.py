@@ -67,7 +67,7 @@ class SearchEngine():
         for w in query_bow:
             psts.append(self.index_pst[w])
         docID_list = self.ranker.ranking(bow, psts)
-        return docID_list
+        return docID_list, bow
 
 
     def change_ranker(self, ranker_name):
