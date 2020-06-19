@@ -82,7 +82,10 @@ def search():
     maxi = math.ceil(doc_num / hits)
     range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
     first_page_results = cut_page(0)
-    highlight(first_page_results)
+    try:
+        highlight(first_page_results)
+    except:
+        pass
 
     response_time = round(time.time() - t_start, 4)
 
@@ -119,7 +122,10 @@ def next_page():
         end_page = start_page+max_show_pages
         range_pages = range(start_page, end_page)
     print("after page range: ", range_pages)
-    highlight(next_result)
+    try:
+        highlight(next_result)
+    except:
+        pass
 
     return render_template('index.html', query=query,
                         response_time=response_time,
