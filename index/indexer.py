@@ -63,6 +63,19 @@ class WikiParser():
                 self.stem_word_dict[word]=stem_word
             res.append(stem_word)
         return res
+            
+
+    def preprocess_word(self, word):
+        word = word.lower()
+        if word in self.stop_words:
+            return ""
+        else:
+            stem_word = self.stem_word_dict[word]
+            if not stem_word:
+                stem_word = self.stemmer.stem(word) # do stemming
+                self.stem_word_dict[word]=stem_word
+            return stem_word
+
 
     
     def _readlines(self):

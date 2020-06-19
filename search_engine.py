@@ -5,6 +5,7 @@ from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
 from ranking.ranker import RankerBase, TfidfRanker, BM25Ranker, VSMRanker, SLMARanker, SLMDRanker
 from index.indexer import WikiParser
+from string import punctuation
 
 
 parser_strategy = {
@@ -30,6 +31,8 @@ class SearchEngine():
         # source file
         self.fstream = open(self.index_cfg["data_path"], "r", encoding="utf8")
         self.page_positions = load_pickle(self.index_cfg["page_positions_path"])
+
+        self.punc = " " + punctuation + "\n"
 
     
     def _start_ranker(self, ranker_name):
@@ -64,7 +67,7 @@ class SearchEngine():
         for w in query_bow:
             psts.append(self.index_pst[w])
         docID_list = self.ranker.ranking(bow, psts)
-        return docID_list
+        return docID_list, bow
 
 
     def change_ranker(self, ranker_name):
@@ -77,25 +80,75 @@ class SearchEngine():
         return json.loads(self.fstream.readline())
 
 
+    def highlight(self, bow, context):
+        tmp = []
+        tag = True  # last is punc
+        for i, s in enumerate(line):
+            if s in punc:
+                if tag:
+                    continue
+                pos_e = i
+                word = line[pos_s:pos_e]
+                word = sg.parser.preprocess_word(word)
+                if word in bow:
+                    tmp.append((pos_s, pos_e))
+                tag = True
+            else:
+                if tag:
+                    pos_s = i
+                    tag = False
+        return tmp
+
+
 def test():
     cfg_path = "data/index_test.json"
     ranker_name = "Tfidf"
     sg = SearchEngine(cfg_path, ranker_name)
-    t = time.time()
-    res = sg.query("jflskdjg")
+    res, bow = sg.query("test machine")
+    res = res[1:10]
     print(res)
+
+    t = time.time()
+    count = 0
+    punc = " " + punctuation + "\n"
 
     with open("data/processed/wiki_00", 'r', encoding='utf-8') as f:
         for r in res:
-            print(sg.page_positions[r[0]])
+            count += 1
             f.seek(sg.page_positions[r[0]], 0)
             context = f.readline()
-            # print(context)
-            line = json.loads(context)
+            line = json.loads(context)["text"]
             # print(line['id'], line['title'])
 
+            tmp = []
+            tag = True  # last is punc
+            for i, s in enumerate(line):
+                # print(s)
+                if s in punc:
+                    if tag:
+                        continue
+                    pos_e = i
+                    word = line[pos_s:pos_e]
+                    word = sg.parser.preprocess_word(word)
+                    # print([word])
+                    if word in bow:
+                        tmp.append((pos_s, pos_e))
+                    tag = True
+                else:
+                    if tag:
+                        pos_s = i
+                        tag = False
+
+
+            # print(tmp)
+            for i in tmp:
+                print(line[i[0]:i[1]])
+                pass
+            print(count)
+
+
+
     t = time.time() - t
-    print(res)
     print(t)
 
 
