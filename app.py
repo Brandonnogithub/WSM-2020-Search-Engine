@@ -7,6 +7,7 @@ import settings
 from urllib import parse
 from flask import Flask, request, render_template
 from search_engine import SearchEngine
+from string import punctuation
 import nltk
 
 
@@ -19,6 +20,7 @@ port = os.getenv("PORT")
 cfg_path = settings.cfg_path
 ranker_name_list = ["base", "Tfidf", "bm25", "VSM-tf", "VSM-tfidf", "SLM-A", "SLM-D"]
 checked = ["", "checked='true", "", "", "", "", ""]
+punc = " " + punctuation + "\n"
 selected = 1
 only_title = None
 sg = SearchEngine(cfg_path, ranker_name_list[selected])
@@ -46,6 +48,7 @@ def search():
     global maxi
     global selected
     global only_title
+    global bow
     
     # GET data
     t_start = time.time()
@@ -67,7 +70,8 @@ def search():
         pass
     # print(request.args.get('order'), only_title)
     sg._start_ranker(ranker_name_list[selected])
-    doc_id_score = sg.query(query, only_title=flag_only_title)
+    doc_id_score, bow = sg.query(query, only_title=flag_only_title)
+
     doc_id = [ele[0] for ele in doc_id_score]
     doc_num = len(doc_id)
     if doc_num == 0:
@@ -78,6 +82,8 @@ def search():
     maxi = math.ceil(doc_num / hits)
     range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
     first_page_results = cut_page(0)
+    highlight(first_page_results)
+
     response_time = round(time.time() - t_start, 4)
 
     # print(first_page_results[0].keys())
@@ -113,6 +119,7 @@ def next_page():
         end_page = start_page+max_show_pages
         range_pages = range(start_page, end_page)
     print("after page range: ", range_pages)
+    highlight(next_result)
 
     return render_template('index.html', query=query,
                         response_time=response_time,
@@ -152,7 +159,6 @@ def read_doc_content(doc_id_list):
     return docs
 
 
-
 # -- JINJA CUSTOM FILTERS -- #
 
 @app.template_filter('truncate_title')
@@ -162,19 +168,6 @@ def truncate_title(title):
     """
     return title if len(title) <= 70 else title[:70] + "..."
 
-@app.context_processor
-def utility_processor():
-    def highlight(text, query):
-        text.replace(query, "<mark>"+query+"</mark>")
-        # text_list = text.split(' ')
-        # for i, word in enumerate(text_list):
-        #     if query in word:
-        #         text0 = " ".join(text_list[:i])
-        #         text1 = " ".join(text_list[i+1:])
-        print(text)
-        return text
-
-    return dict(highlight=highlight)
 
 @app.template_filter('truncate_description')
 def truncate_description(description):
@@ -210,6 +203,70 @@ def truncate_url(url):
     url = "%s/.../%s" % (url[0], url[-1])
     return url[:60] + "..." if len(url) > 60 else url
 
+def highlight(pages):
+    for article in pages:
+        text = article["text"]
+        text = text.replace(article["title"], "", 1)
+        pos_list = search_bow(bow, text)
+
+        max_description_len = 200
+        expected_average_len = int(max_description_len / len(pos_list) / 2)
+        # print("=" * 100)
+        # print(expected_average_len)
+        # print(pos_list)
+        # print("=" * 100)
+        lack_len = 0
+        processed_description = ""
+        for i, index in enumerate(pos_list):
+            if i == 0:
+                if index[1] < expected_average_len:
+                    lack_len += expected_average_len - index[1]
+                    processed_description += text[: index[0]] + "<mark>"+text[index[0]:index[1]]+"</mark>"
+                else:
+                    processed_description += "... " + text[-expected_average_len: index[0]] + "<mark>"+text[index[0]:index[1]]+"</mark>"
+            else:
+                if index[1] - pos_list[i-1][1] < expected_average_len * 2:
+                    processed_description += text[pos_list[i-1][1]: index[0]] + "<mark>"+text[index[0]:index[1]]+"</mark>"
+                    lack_len += expected_average_len * 2 - (index[1] - pos_list[i-1][1])
+                else:
+                    processed_description += text[pos_list[i-1][1]: pos_list[i-1][1]+expected_average_len] + " ... "\
+                                             + text[index[0]-expected_average_len: index[0]] + "<mark>"+text[index[0]:index[1]]+"</mark>"
+
+        last_len = expected_average_len + lack_len
+        processed_description += text[index[1]: index[1]+last_len] + " ..."
+
+        # print("*" * 100)
+        # print("processed", processed_description)
+        # print("*" * 100)
+        article["description"] = processed_description
+
+    # return pages
+
+def search_bow(bow, line):
+    tmp = []
+    tag = True  # last is punc
+    bow = bow.copy()
+    for i, s in enumerate(line):
+        if len(bow) == 0:
+            break
+        if s in punc:
+            if tag:
+                continue
+            pos_e = i
+            word = line[pos_s:pos_e]
+            word = sg.parser.preprocess_word(word)
+            for b in bow:
+                if b in word:
+                    s = word.find(b)
+                # if word in b:
+                    tmp.append((pos_s+s, pos_s+s+len(b)))
+                    bow.remove(b)
+            tag = True
+        else:
+            if tag:
+                pos_s = i
+                tag = False
+    return tmp
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
