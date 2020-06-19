@@ -262,11 +262,14 @@ def update_page_word_index():
     doc_len = load_pickle(index_cfg["page_len_path"])
     index = defaultdict(lambda:[[],[]], load_pickle(index_cfg["index_path"]))
 
-    for i, x in enumerate(doc_word_index):
+    for i, x in tqdm(enumerate(doc_word_index), total=len(doc_word_index)):
         sum_v = 0
         for k, v in x.items():
             sum_v += (v * log10(page_count / (len(index[k][0]) + 1))) ** 2
-        sum_v = (sum_v / doc_len[i]) ** 0.5
+        if doclen[i]:
+            sum_v = (sum_v / doc_len[i]) ** 0.5
+        else:
+            sum_v = 0
         x["_sum_tfidf"] = sum_v
     dump_pickle(doc_word_index, index_cfg["page_word_index_path"])
     
@@ -280,7 +283,7 @@ def test():
     fstream = open(index_cfg["data_path"], "r", encoding="utf8")
     page_positions = load_pickle(index_cfg["page_positions_path"])
 
-    for i, x in enumerate(doc_word_index):
+    for i, x in tqdm(enumerate(doc_word_index)):
         if doc_len[i] == 0:
             fstream.seek(page_positions[i], 0)
             print(fstream.readline())
@@ -309,10 +312,10 @@ if __name__ == "__main__":
     # # save index info
     # index_maker.save_cfg(settings.cfg_path)
 
-    # # update page word index
-    # update_page_word_index()
+    # update page word index
+    update_page_word_index()
 
-    test()
+    # test()
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")

@@ -102,7 +102,7 @@ class VSMRanker(RankerBase):
                         tmp = 0
                         for word in bow_dict:
                             tmp += bow_dict[word] * word_index[word]
-                        res[docID] = tmp / word_index["_sum"]
+                        res[docID] = tmp / word_index["_sum"]  # word_index["_sum"] may be divided by 0, but here for query it's impossible
                         visted[docID] = True
         else:
             # use tf-idf
@@ -114,7 +114,7 @@ class VSMRanker(RankerBase):
                         tmp = 0
                         for word in bow_dict:
                             tmp += bow_dict[word] * word_index[word]
-                        res[docID] = tmp / word_index["_sum_tfidf"]
+                        res[docID] = tmp / word_index["_sum_tfidf"] # word_index["_sum_tfidf"] may be divided by 0, but here for query it's impossible
                         visted[docID] = True
 
         return sorted(res.items(), key=lambda x:x[1], reverse=True)
@@ -145,9 +145,9 @@ class SLMARanker(RankerBase):
                     tmp_index = self.doc_word_index[docID]
                     for word in bow:
                         if word in tmp_index:
-                            score += log((tmp_index[word] + self.delta) / (self.doc_len[docID] + self.voc_len))
+                            score += log((tmp_index[word] + self.delta) / (self.doc_len[docID] + self.voc_len))     # doc_len[docID] may be divided by 0, but here for query it's impossible
                         else:
-                            score += log(self.delta / (self.doc_len[docID] + self.voc_len))
+                            score += log(self.delta / (self.doc_len[docID] + self.voc_len))                         # doc_len[docID] may be divided by 0, but here for query it's impossible
                     res[docID] = score
                     visted[docID] = True
 
