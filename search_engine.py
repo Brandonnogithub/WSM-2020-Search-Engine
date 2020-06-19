@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from utils.io_utils import load_json, load_pickle
 from utils.tokenization import BasicTokenizer
-from ranking.ranker import RankerBase, TfidfRanker, BM25Ranker, VSMRanker
+from ranking.ranker import RankerBase, TfidfRanker, BM25Ranker, VSMRanker, SLMARanker, SLMDRanker
 from index.indexer import WikiParser
 
 
@@ -39,6 +39,10 @@ class SearchEngine():
             self.ranker = VSMRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.index_pst, use_tf=True, last_ranker=self.ranker)
         elif ranker_name == "VSM-tfidf":
             self.ranker = VSMRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.index_pst, use_tf=False, last_ranker=self.ranker)
+        elif ranker_name == "SLM-A":
+            self.ranker = SLMARanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], len(self.vocab), delta=0.5, last_ranker=self.ranker)
+        elif ranker_name == "SLM-D":
+            self.ranker = SLMDRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.vocab, lambda_=0.5, last_ranker=self.ranker)
         else:
             self.ranker = None
         self.ranker_name = ranker_name

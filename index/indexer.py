@@ -95,7 +95,6 @@ class WikiParser():
             # make index for title
             title = c_page["title"]
             title_list = self.preprocess_sen(title)
-            self.page_len += len(title_list)
             for word in title_list:
                 word_counter[word] += 1
             for word in word_counter:
@@ -194,7 +193,8 @@ class IndexMaker():
 
     def _update_vocab(self, index):
         for word in index:
-            word = word.split(".")[0]
+            if word.endswith(".t"):
+                continue 
             (_, fl) = index[word]
             for fre in fl:
                 self.vocab[word] += fre
