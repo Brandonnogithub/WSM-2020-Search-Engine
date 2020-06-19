@@ -18,6 +18,10 @@ class SearchEngine():
         self.index_pst = defaultdict(lambda:[[],[]], load_pickle(self.index_cfg["index_path"]))
         self.page_count = self.index_cfg["page_count"]
         self.vocab = load_json(self.index_cfg["vocab_path"])
+        self.total_word = 0
+        for v in self.vocab.values():
+            self.total_word += v
+
         # self.tokenizer = BasicTokenizer(never_split=[])
         self.ranker = None
         self._start_ranker(ranker_name)
@@ -42,7 +46,7 @@ class SearchEngine():
         elif ranker_name == "SLM-A":
             self.ranker = SLMARanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], len(self.vocab), delta=0.5, last_ranker=self.ranker)
         elif ranker_name == "SLM-D":
-            self.ranker = SLMDRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.vocab, lambda_=0.5, last_ranker=self.ranker)
+            self.ranker = SLMDRanker(self.page_count, self.index_cfg["page_len_path"], self.index_cfg["page_word_index_path"], self.vocab, self.total_word, lambda_=0.5, last_ranker=self.ranker)
         else:
             self.ranker = None
         self.ranker_name = ranker_name

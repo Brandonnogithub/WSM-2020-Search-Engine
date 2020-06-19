@@ -3,8 +3,6 @@ from utils.io_utils import load_json, load_pickle
 from collections import defaultdict
 
 
-total_word = None
-
 
 class RankerBase():
     # keep all
@@ -193,15 +191,12 @@ class SLMDRanker(RankerBase):
     P(D)*P(q|D), P(D) is the same, P(q|D) = \Pi P(w|D) (using log, equal to sum(logP(w|D)))
     MLE: P(w|D) = c(w|D) / sum(c(w|D))
     '''
-    def __init__(self, doc_total, doc_len_path, doc_word_index_path, vocab, lambda_=0.5, last_ranker=None):
+    def __init__(self, doc_total, doc_len_path, doc_word_index_path, vocab, total_word, lambda_=0.5, last_ranker=None):
         super(SLMDRanker, self).__init__()
         self.doc_total = doc_total                  # 6047512 for wiki
         self.lambda_ = lambda_  # [0,1]
         self.vocab = vocab
-
-        if not total_word:
-            for v in self.vocab.values():
-                total_word += v
+        self.total_word = total_word
 
         if last_ranker:
             if last_ranker.doc_len:
@@ -226,9 +221,9 @@ class SLMDRanker(RankerBase):
                     tmp_index = self.doc_word_index[docID]
                     for word in bow:
                         if word in tmp_index:
-                            score += log(self.lambda_ * (tmp_index[word] / self.doc_len[docID]) + (1 - self.lambda_) * self.vocab[word] / total_word)
+                            score += log(self.lambda_ * (tmp_index[word] / self.doc_len[docID]) + (1 - self.lambda_) * self.vocab[word] / self.total_word)
                         else:
-                            score += log((1 - self.lambda_) * self.vocab[word] / total_word)
+                            score += log((1 - self.lambda_) * self.vocab[word] / self.total_word)
                     res[docID] = score
                     visted[docID] = True
 
