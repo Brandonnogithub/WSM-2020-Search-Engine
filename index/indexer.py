@@ -5,8 +5,10 @@ import pickle
 import nltk
 import argparse
 import json
+import settings
+from math import log10
 from collections import defaultdict
-from utils.io_utils import load_json, dump_pickle, dump_json
+from utils.io_utils import load_json, dump_pickle, dump_json, load_pickle
 from utils.tokenization import BasicTokenizer
 from string import punctuation
 from array import array
@@ -252,6 +254,23 @@ class IndexMaker():
         dump_json(cfg, path, indent=4)
 
 
+def update_page_word_index():
+    # used for VSM tfidf 
+    index_cfg = load_json(settings.cfg_path)
+    doc_word_index = load_pickle(index_cfg["page_word_index_path"]) # list
+    page_count =index_cfg["page_count"]
+    doc_len = load_pickle(index_cfg["page_len_path"])
+    index = defaultdict(lambda:[[],[]], load_pickle(index_cfg["index_path"]))
+
+    for i, x in enumerate(doc_word_index):
+        sum_v = 0
+        for k, v in x.items():
+            sum_v += (v * log10(page_count / (len(index[k][0]) + 1))) ** 2
+        sum_v = (sum_v / doc_len[i]) ** 0.5
+        x["_sum_tfidf"] = sum_v
+    dump_pickle(doc_word_index, index_cfg["page_word_index_path"])
+    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -268,12 +287,15 @@ if __name__ == "__main__":
 
     start = time.time() # time start
 
-    wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
-    index_maker = IndexMaker(wiki_parser, args.output_dir)
-    index_maker.make_index()
+    # wiki_parser = WikiParser(args.input_dir, args.output_dir, args.debug)
+    # index_maker = IndexMaker(wiki_parser, args.output_dir)
+    # index_maker.make_index()
 
-    # save index info
-    index_maker.save_cfg("data/index_test.json")
+    # # save index info
+    # index_maker.save_cfg(settings.cfg_path)
+
+    # update page word index
+    update_page_word_index()
 
     end = time.time()   # time end
     print("Time taken - " + str(end - start) + " s")
