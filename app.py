@@ -17,7 +17,9 @@ port = os.getenv("PORT")
 cfg_path = "data/index_test.json"
 ranker_name_list = ["base", "Tfidf", "bm25", "VSM-tf", "VSM-tfidf", "SLM-A", "SLM-D"]
 checked = ["", "checked='true", "", "", "", "", ""]
-sg = SearchEngine(cfg_path, ranker_name_list[1])
+selected = 1
+only_title = None
+sg = SearchEngine(cfg_path, ranker_name_list[selected])
 
 hits = 10
 num_ra = 7
@@ -40,13 +42,30 @@ def search():
     global query
     global doc_id
     global maxi
+    global selected
+    global only_title
     
-
-
     # GET data
     t_start = time.time()
+    flag_only_title = False
     query = request.args.get("query", None)
-    doc_id_score = sg.query(query)
+    try:
+        selected = int(request.args.get('order')) - 1
+        for i in range(num_ra):
+            if i == selected:
+                checked[i] = 'checked="true"'
+            else:
+                checked[i] = ''
+        
+        only_title = request.args.get('onlytitle')
+        if only_title:
+            only_title = "checked"
+            flag_only_title = True
+    except:
+        pass
+    # print(request.args.get('order'), only_title)
+    sg._start_ranker(ranker_name_list[selected])
+    doc_id_score = sg.query(query, only_title=flag_only_title)
     doc_id = [ele[0] for ele in doc_id_score]
     doc_num = len(doc_id)
     if doc_num == 0:
@@ -68,55 +87,10 @@ def search():
                             page=1,
                             maxpage=maxi,
                             checked=checked,
+                            only_title=only_title,
                             matched=matched)    
     # except:
     #     print('search error')
-
-
-
-@app.route('/search/<query>/', methods=['GET'])
-def high_search(query):
-    # try:
-    global doc_id
-    global maxi
-    global checked
-    selected = int(request.args.get('order')) - 1
-    for i in range(num_ra):
-        if i == selected:
-            checked[i] = 'checked="true"'
-        else:
-            checked[i] = ''
-
-    # TODO: same query with different rank algorithm
-    t_start = time.time()
-    sg._start_ranker(ranker_name_list[selected])
-    doc_id_score = sg.query(query)
-    doc_id = [ele[0] for ele in doc_id_score]
-    doc_num = len(doc_id)
-
-    if doc_num == 0:
-        matched = False
-    else:
-        matched = True
-    maxi = math.ceil(doc_num / hits)
-    range_pages = range(1, maxi+1 if maxi<=max_show_pages else max_show_pages+1)
-    first_page_results = cut_page(0)
-    response_time = round(time.time()-t_start, 4)
-
-    # show the list of matching results
-    return render_template('index.html', query=query,
-                            response_time=response_time,
-                            total=doc_num,
-                            range_pages=range_pages,
-                            results=first_page_results,
-                            page=1,
-                            maxpage=maxi,
-                            checked=checked,
-                            matched=matched)  
-
-    # except:
-    #     print('high search error')
-
 
 @app.route('/search/pages/0/', methods=['GET'])
 def next_page():
@@ -125,15 +99,16 @@ def next_page():
     current_page = int(request.args.get("current_page"))
     next_result = cut_page(current_page-1)
     response_time = round(time.time()-t_start, 4)
+    print("before page range: ", range_pages, current_page)
     if current_page > range_pages[-1]:
         start_page = current_page
-        end_page = start_page+max_show_pages if start_page+max_show_pages < maxi else maxi
+        end_page = start_page+max_show_pages if start_page+max_show_pages < maxi else maxi+1
         range_pages = range(start_page, end_page)
-    if current_page < range_pages[0]:
+    elif current_page < range_pages[0]:
         start_page = current_page-max_show_pages+1 if current_page-max_show_pages+1 > 1 else 1
         end_page = start_page+max_show_pages
         range_pages = range(start_page, end_page)
-    # print(range_pages)
+    print("after page range: ", range_pages)
 
     return render_template('index.html', query=query,
                         response_time=response_time,
@@ -143,6 +118,7 @@ def next_page():
                         page=current_page,
                         maxpage=maxi,
                         checked=checked,
+                        only_title=only_title,
                         matched=True)  
 
 

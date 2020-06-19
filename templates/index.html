@@ -24,28 +24,24 @@
         <form action="/search/" method="GET" name="search" role="search">
             <header class="major special">
                 <input name="query" id="query" type="text" style="display:none"  value="{{ query }}"></input>
-                <h2 id="queryeditable" contenteditable="true">{{ query }}<svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <h2 id="queryeditable" contenteditable="true">{{ query }}
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-                    </svg></h2>
-                
+                    </svg>
+                </h2>
+                <br>
+                <input {{checked[0]}} type="radio" name="order" id="r1" value="1" /> <label for="r1">boolean</label>
+                <input {{checked[1]}} type="radio" name="order" id="r2" value="2" /> <label for="r2">tf-idf</label>
+                <input {{checked[2]}} type="radio" name="order" id="r3" value="3" /> <label for="r3">bm25</label>
+                <input {{checked[3]}} type="radio" name="order" id="r4" value="4" /> <label for="r4">tf-idf</label>
+                <input {{checked[4]}} type="radio" name="order" id="r5" value="5" /> <label for="r5">tf-idf</label>
+                <input {{checked[5]}} type="radio" name="order" id="r6" value="6" /> <label for="r6">slma</label>
+                <input {{checked[6]}} type="radio" name="order" id="r7" value="7" /> <label for="r7">slmd</label>
+               
+                <input {{only_title}} type="checkbox" name="onlytitle" id="r0" value="only_title" /> <label for="r0">only title</label>
                 <p>About {{ total }} results ({{ response_time }} seconds)</p>
             </header>
         </form>
-
-        <div id="select">
-            <ul>
-                <form name="select" action="/search/{{query}}/" method="GET">
-                    <input {{checked[0]}} type="radio" name="order" id="r1" value="1" /> <label for="r1">boolean</label>
-                    <input {{checked[1]}} type="radio" name="order" id="r2" value="2" /> <label for="r2">tf-idf</label>
-                    <input {{checked[2]}} type="radio" name="order" id="r3" value="3" /> <label for="r3">bm25</label>
-                    <input {{checked[3]}} type="radio" name="order" id="r4" value="4" /> <label for="r4">vsm-tf</label>
-                    <input {{checked[4]}} type="radio" name="order" id="r5" value="5" /> <label for="r5">vsn-tfidf</label>
-                    <input {{checked[5]}} type="radio" name="order" id="r6" value="6" /> <label for="r6">slma</label>
-                    <input {{checked[6]}} type="radio" name="order" id="r7" value="7" /> <label for="r7">slmd</label>
-                    <input type="submit" value="ok">
-                </form>
-            </ul>
-        </div>
 
         {% if matched %}
         <div class="feature-grid">
